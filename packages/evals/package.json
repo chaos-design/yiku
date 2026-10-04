@@ -1,0 +1,33 @@
+{
+  "name": "@yiku/evals",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./atoms": {
+      "development": "./src/atoms.ts",
+      "types": "./dist/atoms.d.ts",
+      "import": "./dist/atoms.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean && rm -rf dist",
+    "performance": "node scripts/run-performance.mjs",
+    "test": "vitest run --root ../.. packages/evals/tests",
+    "watch": "tsc -b --watch --preserveWatchOutput"
+  },
+  "dependencies": {
+    "@yiku/atomic-flow": "workspace:*"
+  }
+}
