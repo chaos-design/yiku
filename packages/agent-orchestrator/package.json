@@ -1,0 +1,44 @@
+{
+  "name": "@yiku/agent-orchestrator",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./atoms": {
+      "development": "./src/runtime/atoms.ts",
+      "types": "./dist/runtime/atoms.d.ts",
+      "import": "./dist/runtime/atoms.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean && rm -rf dist",
+    "test": "vitest run --root ../.. packages/agent-orchestrator/tests",
+    "watch": "tsc -b --watch --preserveWatchOutput"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@openai/agents": "^0.13.5",
+    "@yiku/agent-code": "workspace:*",
+    "@yiku/agent-research": "workspace:*",
+    "@yiku/atomic-flow": "workspace:*",
+    "@yiku/config": "workspace:*",
+    "@yiku/evals": "workspace:*",
+    "@yiku/hooks": "workspace:*",
+    "@yiku/memories": "workspace:*",
+    "@yiku/sandbox": "workspace:*",
+    "@yiku/trajectory": "workspace:*",
+    "yaml": "^2.8.1",
+    "zod": "^4.4.3"
+  }
+}
