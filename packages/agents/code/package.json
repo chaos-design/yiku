@@ -1,0 +1,31 @@
+{
+  "name": "@yiku/agent-code",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean && rm -rf dist",
+    "test": "vitest run --root ../../.. packages/agents/code/tests",
+    "watch": "tsc -b --watch --preserveWatchOutput"
+  },
+  "dependencies": {
+    "@openai/agents": "^0.13.5",
+    "@yiku/evals": "workspace:*",
+    "@yiku/sandbox": "workspace:*",
+    "shell-quote": "^1.10.0",
+    "zod": "^4.4.3"
+  }
+}
