@@ -86,6 +86,26 @@
       .stat-pill { font-family: var(--mono); font-size: 0.7rem; color: var(--faint); }
       .stat-pill b { color: var(--cyan); font-weight: 600; }
 
+      .deprecation {
+        max-width: 1500px;
+        margin: 18px auto -8px;
+        padding: 14px 18px;
+        font-size: 13px;
+        line-height: 1.65;
+        color: var(--muted);
+        background: rgba(255, 92, 77, 0.06);
+        border: 1px solid rgba(255, 92, 77, 0.32);
+        border-left: 3px solid var(--red);
+        border-radius: 0 var(--radius) var(--radius) 0;
+      }
+      .deprecation b { color: var(--red); font-weight: 600; }
+      .deprecation a { color: var(--cyan); }
+      .deprecation code {
+        padding: 1px 5px; font-family: var(--mono); font-size: 0.85em;
+        color: var(--cyan); background: rgba(83, 214, 231, 0.09);
+        border: 1px solid rgba(83, 214, 231, 0.16); border-radius: 3px;
+      }
+
       .layout { display: flex; max-width: 1500px; margin: 0 auto; }
 
       /* Sidebar */
@@ -282,6 +302,13 @@
         <button type="button" data-mode="mock">模拟面试</button>
       </div>
       <span class="stat-pill" id="progressStat">进度 <b>0</b>/0</span>
+    </div>
+
+    <div class="deprecation">
+      <b>旧版题库 · 已停止维护。</b>本文件是 2025-09-05 的早期版本，内容已被
+      <a href="yiku-interview-bank.html">新版面试题库</a>取代。新版覆盖更多分类，并且每题都带有指向
+      <code>docs/</code> 与 <code>packages/</code> 的来源指针。本文件<b>没有内容快照日期，也没有来源指针</b>，
+      其中的默认值、阈值和失败语义可能已经过期——使用前请以源码为准，不要把本页当作事实源。
     </div>
 
     <div class="layout">
