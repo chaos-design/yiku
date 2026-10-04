@@ -1,0 +1,44 @@
+{
+  "name": "@yiku/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "yiku": "./bin/yiku.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "development": "./src/index.tsx",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "bin",
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -b ../.. && corepack pnpm --filter @yiku/agent-observatory build:web",
+    "clean": "tsc -b --clean && rm -rf dist",
+    "dev": "node scripts/dev-dist-restart.mjs",
+    "test": "vitest run --root ../.. packages/cli/tests",
+    "watch": "tsc -b --watch --preserveWatchOutput"
+  },
+  "dependencies": {
+    "@inkjs/ui": "2.0.0",
+    "@yiku/agent-observatory": "workspace:*",
+    "@yiku/agent-orchestrator": "workspace:*",
+    "@yiku/atomic-flow": "workspace:*",
+    "@yiku/config": "workspace:*",
+    "@yiku/hooks": "workspace:*",
+    "@yiku/memories": "workspace:*",
+    "@yiku/trajectory": "workspace:*",
+    "ignore": "5.3.2",
+    "ink": "^7.1.1",
+    "marked": "^18.0.7",
+    "react": "^19.2.8",
+    "string-width": "^8.2.2"
+  }
+}

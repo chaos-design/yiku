@@ -1,0 +1,33 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "tsBuildInfoFile": "node_modules/.cache/tsconfig.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "references": [
+    {
+      "path": "../agent-observatory/server"
+    },
+    {
+      "path": "../atomic-flow"
+    },
+    {
+      "path": "../config"
+    },
+    {
+      "path": "../trajectory"
+    },
+    {
+      "path": "../hooks"
+    },
+    {
+      "path": "../memories"
+    },
+    {
+      "path": "../agent-orchestrator"
+    }
+  ]
+}
