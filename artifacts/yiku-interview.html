@@ -1,0 +1,1885 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Yiku Agent Runtime 面试题库与模拟面试控制台" />
+    <title>Yiku / Agent Runtime Interview Console</title>
+    <style>
+      :root {
+        --bg: #0c0d0e;
+        --surface: #141618;
+        --surface-2: #1b1e21;
+        --surface-3: #24282c;
+        --ink: #f3f0e9;
+        --muted: #9da3a7;
+        --faint: #696f73;
+        --line: #34393d;
+        --red: #ff4f40;
+        --cyan: #53d6e7;
+        --green: #72d29b;
+        --yellow: #f2c14e;
+        --blue: #6f9dff;
+        --purple: #b893ff;
+        --radius: 6px;
+        --shadow: 0 18px 55px rgba(0, 0, 0, 0.35);
+        --display: "Avenir Next Condensed", "DIN Condensed", "Avenir Next", sans-serif;
+        --body: "Avenir Next", "Helvetica Neue", "PingFang SC", sans-serif;
+        --mono: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--body);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      body::after {
+        position: fixed;
+        z-index: 100;
+        inset: 0;
+        pointer-events: none;
+        content: "";
+        opacity: 0.10;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.28'/%3E%3C/svg%3E");
+      }
+      a { color: var(--cyan); }
+      button { font: inherit; cursor: pointer; }
+
+      /* Top bar */
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        height: 56px;
+        padding: 0 20px;
+        background: rgba(12, 13, 14, 0.94);
+        border-bottom: 1px solid var(--line);
+        backdrop-filter: blur(6px);
+      }
+      .brand-mark {
+        color: var(--red);
+        font-family: var(--display);
+        font-size: 1.35rem;
+        font-weight: 800;
+      }
+      .brand-title {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .brand-divider { width: 1px; height: 22px; background: var(--line); }
+      .spacer { flex: 1; }
+      .mode-switch { display: flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 3px; }
+      .mode-switch button {
+        border: 0; background: transparent; color: var(--muted);
+        padding: 6px 14px; border-radius: 4px; font-size: 0.82rem; letter-spacing: 0.02em;
+      }
+      .mode-switch button.active { background: var(--surface-3); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+      .stat-pill { font-family: var(--mono); font-size: 0.7rem; color: var(--faint); }
+      .stat-pill b { color: var(--cyan); font-weight: 600; }
+
+      .layout { display: flex; max-width: 1500px; margin: 0 auto; }
+
+      /* Sidebar */
+      .sidebar {
+        position: sticky;
+        top: 56px;
+        align-self: flex-start;
+        display: flex;
+        flex-direction: column;
+        width: 320px;
+        height: calc(100vh - 56px);
+        overflow: hidden;
+        padding: 18px 14px 0;
+        border-right: 1px solid var(--line);
+        background: var(--surface);
+      }
+      /* 吸顶固定的筛选区：搜索框 + 分类/难度筛选，不随列表滚动 */
+      .sidebar-fixed {
+        flex-shrink: 0;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      .filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+      .filter-row:last-child { margin-bottom: 0; }
+      .filter-label {
+        font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em;
+        text-transform: uppercase; color: var(--faint); margin: 0 0 6px 2px;
+      }
+      .chip {
+        border: 1px solid var(--line); background: var(--surface-2); color: var(--muted);
+        border-radius: 999px; padding: 4px 11px; font-size: 0.72rem; letter-spacing: 0.02em;
+      }
+      .chip.active { border-color: var(--cyan); color: var(--cyan); background: rgba(83,214,231,0.08); }
+      .search-box {
+        width: 100%; margin-bottom: 12px; padding: 9px 12px;
+        background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius);
+        color: var(--ink); font-size: 0.85rem;
+      }
+      .search-box::placeholder { color: var(--faint); }
+      .q-list {
+        list-style: none; margin: 0; padding: 12px 0 18px;
+        flex: 1; min-height: 0; overflow-y: auto;
+      }
+      .q-list li {
+        padding: 10px 12px; margin-bottom: 6px; border-radius: var(--radius);
+        border: 1px solid transparent; background: var(--surface-2); cursor: pointer;
+        transition: border-color 0.12s, background 0.12s;
+      }
+      .q-list li:hover { border-color: var(--line); }
+      .q-list li.active { border-color: var(--red); background: var(--surface-3); }
+      .q-list li.done { opacity: 0.72; }
+      .q-list .q-idx { font-family: var(--mono); font-size: 0.66rem; color: var(--faint); }
+      .q-list .q-title { display: block; font-size: 0.86rem; color: var(--ink); margin-top: 3px; }
+      .q-list .q-meta { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
+      .tag { font-family: var(--mono); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 3px; }
+      .tag.cat { color: var(--cyan); background: rgba(83,214,231,0.10); }
+      .tag.d1 { color: var(--green); background: rgba(114,210,155,0.12); }
+      .tag.d2 { color: var(--yellow); background: rgba(242,193,78,0.12); }
+      .tag.d3 { color: var(--red); background: rgba(255,79,64,0.12); }
+      .done-dot { margin-left: auto; color: var(--green); font-size: 0.8rem; }
+
+      /* Main */
+      .main { flex: 1; min-width: 0; padding: 26px 34px 90px; }
+
+      /* Study card */
+      .q-head { border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 20px; }
+      .q-head .kicker { font-family: var(--mono); font-size: 0.68rem; color: var(--faint); letter-spacing: 0.12em; text-transform: uppercase; }
+      .q-head h1 { font-size: 1.5rem; line-height: 1.35; margin: 8px 0 12px; font-weight: 700; }
+      .q-head .meta { display: flex; gap: 8px; flex-wrap: wrap; }
+
+      .section { margin-bottom: 18px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+      .section > .sec-head {
+        display: flex; align-items: center; gap: 10px; width: 100%;
+        padding: 12px 16px; background: var(--surface-2); border: 0; color: var(--ink);
+        text-align: left; border-bottom: 1px solid transparent;
+      }
+      .section.open > .sec-head { border-bottom-color: var(--line); }
+      .sec-head .sec-mark { font-family: var(--mono); font-size: 0.7rem; padding: 2px 7px; border-radius: 3px; letter-spacing: 0.06em; }
+      .sec-head .sec-name { font-size: 0.98rem; font-weight: 600; }
+      .sec-head .caret { margin-left: auto; color: var(--faint); transition: transform 0.15s; }
+      .section.open .caret { transform: rotate(90deg); }
+      .sec-body { display: none; padding: 16px 18px; font-size: 0.92rem; color: #e7e3da; }
+      .section.open .sec-body { display: block; }
+      .mark-idea { color: var(--blue); background: rgba(111,157,255,0.12); }
+      .mark-exp { color: var(--purple); background: rgba(184,147,255,0.12); }
+      .mark-ans { color: var(--green); background: rgba(114,210,155,0.12); }
+      .mark-follow { color: var(--yellow); background: rgba(242,193,78,0.12); }
+
+      .sec-body p { margin: 0 0 12px; }
+      .sec-body ul, .sec-body ol { margin: 0 0 12px; padding-left: 22px; }
+      .sec-body li { margin-bottom: 5px; }
+      .sec-body h4 { margin: 16px 0 8px; font-size: 0.9rem; color: var(--cyan); letter-spacing: 0.02em; }
+      .sec-body code:not(pre code) { font-family: var(--mono); font-size: 0.82em; background: var(--surface-3); padding: 1px 6px; border-radius: 3px; color: var(--yellow); }
+      .sec-body pre {
+        background: #0a0b0c; border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 14px 16px; overflow-x: auto; margin: 0 0 12px;
+      }
+      .sec-body pre code { font-family: var(--mono); font-size: 0.8rem; color: #d8e0dc; line-height: 1.55; }
+      .kw { color: var(--red); }
+      .cm { color: var(--faint); font-style: italic; }
+      .st { color: var(--green); }
+      .hl { color: var(--cyan); font-weight: 600; }
+
+      .nav-row { display: flex; justify-content: space-between; margin-top: 26px; }
+      .nav-btn { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); padding: 9px 18px; border-radius: var(--radius); font-size: 0.85rem; }
+      .nav-btn:hover { border-color: var(--cyan); }
+      .nav-btn.primary { border-color: var(--red); color: var(--red); }
+      .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+      .tool-row { display: flex; gap: 8px; margin-top: 4px; }
+      .ghost-btn { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 6px 12px; border-radius: var(--radius); font-size: 0.78rem; }
+      .ghost-btn:hover { color: var(--ink); border-color: var(--cyan); }
+
+      /* Mock mode */
+      .mock-wrap { max-width: 900px; margin: 0 auto; }
+      .mock-setup { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 28px; }
+      .mock-setup h2 { margin: 0 0 6px; font-size: 1.3rem; }
+      .mock-setup p.sub { color: var(--muted); margin: 0 0 22px; font-size: 0.9rem; }
+      .field { margin-bottom: 18px; }
+      .field label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.04em; text-transform: uppercase; font-family: var(--mono); }
+      .opt-row { display: flex; flex-wrap: wrap; gap: 8px; }
+      .opt-row .chip { cursor: pointer; padding: 7px 15px; font-size: 0.82rem; }
+      .range-row { display: flex; align-items: center; gap: 14px; }
+      .range-row input[type=range] { flex: 1; accent-color: var(--red); }
+      .range-row .val { font-family: var(--mono); color: var(--cyan); min-width: 30px; text-align: right; }
+      .start-btn { width: 100%; margin-top: 8px; padding: 13px; border: 1px solid var(--red); background: rgba(255,79,64,0.10); color: var(--red); border-radius: var(--radius); font-size: 0.95rem; letter-spacing: 0.04em; font-weight: 600; }
+      .start-btn:hover { background: rgba(255,79,64,0.18); }
+
+      .mock-progress { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+      .mock-progress .bar { flex: 1; height: 6px; background: var(--surface-3); border-radius: 3px; overflow: hidden; }
+      .mock-progress .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--red), var(--yellow)); width: 0; transition: width 0.3s; }
+      .mock-progress .count { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+      .timer { font-family: var(--mono); font-size: 0.9rem; color: var(--cyan); }
+      .timer.warn { color: var(--yellow); }
+      .timer.danger { color: var(--red); }
+
+      .mock-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px 26px; }
+      .mock-card .kicker { font-family: var(--mono); font-size: 0.66rem; color: var(--faint); letter-spacing: 0.12em; text-transform: uppercase; }
+      .mock-card h2 { font-size: 1.25rem; margin: 8px 0 16px; line-height: 1.4; }
+      .mock-card textarea {
+        width: 100%; min-height: 150px; resize: vertical;
+        background: #0a0b0c; border: 1px solid var(--line); border-radius: var(--radius);
+        color: var(--ink); font-family: var(--mono); font-size: 0.86rem; padding: 14px; line-height: 1.6;
+      }
+      .mock-card textarea:focus { outline: none; border-color: var(--cyan); }
+      .hint-box { margin-top: 12px; padding: 12px 14px; border-left: 3px solid var(--blue); background: rgba(111,157,255,0.06); font-size: 0.85rem; color: var(--muted); border-radius: 0 4px 4px 0; }
+      .self-grade { margin-top: 18px; }
+      .self-grade .grade-opts { display: flex; gap: 8px; flex-wrap: wrap; }
+      .grade-btn { flex: 1; min-width: 120px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); padding: 12px; border-radius: var(--radius); text-align: center; }
+      .grade-btn small { display: block; color: var(--faint); font-size: 0.7rem; margin-top: 3px; }
+      .grade-btn.g0:hover { border-color: var(--red); }
+      .grade-btn.g1:hover { border-color: var(--yellow); }
+      .grade-btn.g2:hover { border-color: var(--green); }
+
+      .reveal-block { margin-top: 18px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+
+      /* Report */
+      .report { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
+      .report h2 { margin: 0 0 20px; }
+      .score-hero { display: flex; align-items: center; gap: 28px; margin-bottom: 26px; }
+      .score-ring { width: 130px; height: 130px; flex-shrink: 0; }
+      .score-legend { flex: 1; }
+      .score-legend .grade-big { font-size: 2.4rem; font-family: var(--display); font-weight: 800; }
+      .score-legend .pct { font-family: var(--mono); color: var(--muted); }
+      .breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+      .breakdown .cell { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+      .breakdown .cell .k { font-size: 0.72rem; color: var(--faint); font-family: var(--mono); text-transform: uppercase; }
+      .breakdown .cell .v { font-size: 1.3rem; font-weight: 700; margin-top: 4px; }
+      .review-item { border-top: 1px solid var(--line); padding: 14px 0; }
+      .review-item .ri-head { display: flex; align-items: center; gap: 10px; }
+      .review-item .ri-title { font-size: 0.92rem; }
+      .review-item .ri-badge { margin-left: auto; font-family: var(--mono); font-size: 0.68rem; padding: 2px 8px; border-radius: 3px; }
+
+      .empty { color: var(--faint); text-align: center; padding: 60px 20px; }
+
+      @media (max-width: 900px) {
+        .sidebar { display: none; }
+        .main { padding: 20px 16px 80px; }
+        .breakdown { grid-template-columns: 1fr; }
+        .score-hero { flex-direction: column; text-align: center; }
+      }
+      .mobile-only { display: none; }
+      @media (max-width: 900px) { .mobile-only { display: inline-flex; } }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <span class="brand-mark">YIKU</span>
+      <span class="brand-divider"></span>
+      <span class="brand-title">Agent Runtime · Interview Console</span>
+      <span class="spacer"></span>
+      <div class="mode-switch" id="modeSwitch">
+        <button type="button" data-mode="study" class="active">题库研习</button>
+        <button type="button" data-mode="mock">模拟面试</button>
+      </div>
+      <span class="stat-pill" id="progressStat">进度 <b>0</b>/0</span>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-fixed">
+          <input class="search-box" id="searchBox" placeholder="搜索题目 / 关键词…" />
+          <p class="filter-label">分类</p>
+          <div class="filter-row" id="catFilter"></div>
+          <p class="filter-label">难度</p>
+          <div class="filter-row" id="diffFilter"></div>
+        </div>
+        <ul class="q-list" id="qList"></ul>
+      </aside>
+
+      <main class="main" id="main"></main>
+    </div>
+
+    <script>
+      // ====================================================================
+      // 数据层：面试题库（基于 Yiku 仓库 docs/ 与源码结构提炼）
+      // 每题字段：id, cat, diff(1/2/3), q(问题), idea(思路), exp(解释),
+      //           ans(答案), follow(追问), tags
+      // 内容为预格式化 HTML 字符串（自包含，无外部资源）。
+      // ====================================================================
+      const CATS = [
+        "架构与包边界", "Runtime 与编排", "权限与安全", "Atomic Flow / 可观测性",
+        "Memory 记忆", "Context Compact", "Subagents / A2A", "Evals 质量门禁",
+        "Prompt 信任边界", "Skills / MCP", "Tasks / 会话状态", "工程实践"
+      ];
+      const DIFF_LABEL = { 1: "基础", 2: "进阶", 3: "深入" };
+    </script>
+    <script id="data-script">
+      const QUESTIONS = [
+      {
+        id: "q1",
+        cat: "架构与包边界",
+        diff: 1,
+        tags: ["monorepo", "package-boundaries", "依赖方向"],
+        q: "请概述 Yiku 的整体分层与包边界。为什么要把「宿主 / 执行编排 / Agent 能力 / 基础协议」拆成独立的包？",
+        idea: `
+          <p>这是一道<b>系统设计定位题</b>，考察你能否用「依赖方向」这一根主线把十几个包串起来，而不是罗列包名。回答顺序建议：</p>
+          <ol>
+            <li>先给<span class="hl">分层心智模型</span>（宿主层 → 执行层 → Agent 能力层 → 策略服务层 → 基础协议层）。</li>
+            <li>再给<span class="hl">依赖方向的硬约束</span>：高层组合低层，基础协议绝不反向依赖 CLI 或具体 Agent。</li>
+            <li>最后用一两个例子说明<span class="hl">这样拆分带来的好处</span>（可替换宿主、可独立测试、可复用协议）。</li>
+          </ol>`,
+        exp: `
+          <p>Yiku 是一个 TypeScript + ESM + pnpm Workspace 的 Monorepo。核心思想是<b>「谁运行 Agent、谁定义能力、谁只是协议」三者分离</b>：</p>
+          <h4>五个层次</h4>
+          <ul>
+            <li><b>宿主层</b>：<code>@yiku/cli</code>（Ink 终端 UI、<code>yiku</code> 二进制）、<code>@yiku/agent-studio</code>（协议无关 Studio Shell）、<code>@yiku/agent-observatory</code>（默认观测插件）。宿主负责交互，把执行<b>委托</b>给 Orchestrator。</li>
+            <li><b>执行层</b>：<code>@yiku/agent-orchestrator</code> 是<b>唯一</b>能构建并运行完整 Agent Session 的包。</li>
+            <li><b>Agent 能力层</b>：<code>@yiku/agent-code</code>、<code>@yiku/agent-research</code> 定义工具、Prompt、领域逻辑，不拥有 Session 生命周期。</li>
+            <li><b>策略服务层</b>：<code>@yiku/config</code>、<code>@yiku/hooks</code>、<code>@yiku/memories</code>、<code>@yiku/evals</code>、<code>@yiku/sandbox</code>。</li>
+            <li><b>基础协议层</b>：<code>@yiku/atomic-flow</code>（运行事实）、<code>@yiku/trajectory</code>（投影）、<code>@yiku/flow-graph</code>（几何布线）。</li>
+          </ul>
+          <h4>关键不变量</h4>
+          <p>依赖只能自上而下。<code>@yiku/atomic-flow</code>、<code>@yiku/agent-studio</code>、<code>@yiku/config</code>、<code>@yiku/flow-graph</code>、<code>@yiku/hooks</code>、<code>@yiku/sandbox</code> <b>不依赖任何其它 Workspace 包</b>；<code>memories</code>、<code>evals</code>、<code>trajectory</code> 只依赖 <code>atomic-flow</code>。</p>`,
+        ans: `
+          <p><b>一句话</b>：Yiku 按「宿主 / 执行编排 / Agent 能力 / 策略服务 / 基础协议」五层拆包，依赖严格自上而下，基础协议零业务依赖。</p>
+          <p><b>为什么这样拆</b>：</p>
+          <ul>
+            <li><b>可替换宿主</b>：CLI 和自定义 Node 宿主共享同一个 Orchestrator。想做 Web 宿主时，只要服务端持有 Runtime，不用重写执行逻辑。</li>
+            <li><b>单一职责 + 可独立测试</b>：<code>@yiku/sandbox</code> 只做进程隔离、不解析命令；<code>@yiku/flow-graph</code> 只做正交布线、不知道业务节点。每个包能单独跑测试。</li>
+            <li><b>协议复用</b>：<code>atomic-flow</code> 是运行观测的<b>唯一事实源</b>，Trajectory 和 Studio Run 都是它的可重建<b>投影</b>——这让「记录一次、多处消费」成立。</li>
+            <li><b>防止腐化</b>：明确「Hooks 的 allow 不能覆盖 Runtime 的 deny」「Studio 不绑定 Yiku 业务协议」这类边界不变量，避免高层耦合渗透到底层。</li>
+          </ul>
+          <p><b>诚实的补充（会加分）</b>：当前 Orchestrator 其实是「带默认业务实现的组合根」而非纯 Runtime Kernel——它内置注册了 <code>CodeAgentFactory</code>/<code>ResearchAgentFactory</code>，而且通用 Permission/User-Question 契约目前定义在 <code>@yiku/agent-code</code> 里，导致即便只跑 Research 也得装 Code 包。这是文档里明确记录的「边界债务」。</p>`,
+        follow: `
+          <ul>
+            <li>如果要新增一个内置 Agent 类型，需要改动哪几个「组合位置」？（答：Agent 包 + Orchestrator 的 AgentFactory 注册，且 CLI 目前还重复注册一次默认 Factory，要同步检查两处。）</li>
+            <li>为什么 <code>@yiku/agent-studio</code> 不能依赖 <code>@yiku/atomic-flow</code>？（答：Studio 要保持协议无关；Atomic Flow 的适配放在 Observatory 插件里。）</li>
+          </ul>`
+      },
+      {
+        id: "q2",
+        cat: "Runtime 与编排",
+        diff: 2,
+        tags: ["run", "AgentSession", "SessionRuntime", "四层入口"],
+        q: "Orchestrator 公共 API 里同时存在 run()、runAgentSessionTurn()、AgentSession、SessionRuntime 四种粒度。它们分别是什么？为什么不合并成一个？",
+        idea: `
+          <p>面试官想确认你理解「<b>不同抽象层承担不同资源与策略责任</b>」，而不是把它们当同义封装。答题主线：<span class="hl">越靠下层，调用方要自己承担的东西越多</span>。用一张「责任递增表」来组织。</p>`,
+        exp: `
+          <p>这四个入口是一条自底向上的执行链，每一层在下层之上增加持久化 / 策略责任：</p>
+          <h4>从底到顶</h4>
+          <ul>
+            <li><b><code>run()</code></b>：最底层 Runner Adapter。执行一个<b>已构建好的</b> OpenAI Agent，处理模型调用、Tool、Handoff、取消、用量，并把 Provider 事件写入 Atomic Flow。<b>不</b>解析配置、<b>不</b>拥有持久 Session。</li>
+            <li><b><code>runAgentSessionTurn()</code></b>：单个 Turn 的装配——负责本轮的 Memory、Capability、Agent Graph、Runner 和 Eval。</li>
+            <li><b><code>AgentSession</code></b>：单个逻辑会话入口。解析 Agent Graph，装配本次 Submit 的 Capability / 权限 / Hook / Memory / Eval，支持多次 <code>submit()</code>。</li>
+            <li><b><code>SessionRuntime</code></b>：长程任务组合根。维护 Stage、预算、Session State、Checkpoint、Task、消息、Trace、用户问题、压缩和跨进程恢复。CLI 持有<b>一个</b> Runtime，退出时统一 <code>close()</code>。</li>
+          </ul>
+          <p>还有一个兼容入口 <code>runAgentSession()</code>：单轮，自动创建并关闭 <code>AgentSession</code>，适合一次性 Node 宿主。</p>`,
+        ans: `
+          <p><b>它们不是同义封装，而是「责任递增」的四层</b>：</p>
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+            <tr style="color:var(--cyan)"><td style="padding:4px 8px;border-bottom:1px solid var(--line)">入口</td><td style="border-bottom:1px solid var(--line)">调用方要自己负责</td><td style="border-bottom:1px solid var(--line)">典型使用者</td></tr>
+            <tr><td style="padding:4px 8px"><code>run()</code></td><td>Agent 构建、配置、存储、Hook/Memory/Eval 全都自理</td><td>Research Playground</td></tr>
+            <tr><td style="padding:4px 8px"><code>runAgentSessionTurn()</code></td><td>Turn 级装配，仍无持久 Session</td><td>Session Subagent 内部</td></tr>
+            <tr><td style="padding:4px 8px"><code>AgentSession</code></td><td>注入 Handler、管理多轮</td><td>多轮 Node 宿主</td></tr>
+            <tr><td style="padding:4px 8px"><code>SessionRuntime</code></td><td>几乎全托管（Stage/恢复/预算）</td><td>CLI</td></tr>
+          </table>
+          <p style="margin-top:12px"><b>为什么不合并</b>：合并会强迫最简单的一次性调用也背上 Checkpoint、Lease、跨进程恢复这些重资源；也会让底层 Runner 无法被 Playground 这类「自己管配置」的宿主复用。分层让「按需付费」——你只为你需要的策略买单。</p>
+          <p><b>最小宿主示例</b>：</p>
+          <pre><code><span class="kw">import</span> { runAgentSession } <span class="kw">from</span> <span class="st">"@yiku/agent-orchestrator"</span>;
+<span class="kw">const</span> output = <span class="kw">await</span> runAgentSession(<span class="st">"审查当前项目的错误处理"</span>, {
+  agentKey: <span class="st">"code"</span>,
+  cwd: process.cwd(),
+});</code></pre>`,
+        follow: `
+          <ul>
+            <li>跨进程恢复时为什么不直接序列化 SDK 的内部 <code>RunState</code>？（答：只从已持久化的稳定 Stage 边界恢复；SDK 内部状态不保证可序列化/可移植，改用明确标记的 reconstructed continuation 或保持 needs-review。）</li>
+            <li>一个顶层 Prompt 对应几个 Atomic Flow Run？（答：一个 Run；长任务可含多个 Stage 但共享同一 Session 身份。）</li>
+          </ul>`
+      },
+      {
+        id: "q3",
+        cat: "Runtime 与编排",
+        diff: 2,
+        tags: ["stage", "autoContinue", "预算", "恢复"],
+        q: "Yiku 如何支撑「长程任务」？请讲讲 Stage、预算、autoContinue 与跨进程恢复之间的关系。",
+        idea: `
+          <p>核心是理解 <b>Session 身份稳定、Stage 可切分</b> 这个设计。答题分三块：Stage 何时结束 → autoContinue 何时续跑 → 恢复从哪里开始。强调「稳定边界」这个词。</p>`,
+        exp: `
+          <p>一个 Session 可以横跨很长时间和多次进程。为避免单次模型调用无限膨胀，Runtime 把执行切成 <b>Stage</b>：</p>
+          <h4>Stage 结束/暂停的条件</h4>
+          <ul>
+            <li>正常完成；</li>
+            <li>达到 Turn / Tool / 时长 / 无进展 预算（<code>maxTurnsPerStage</code>、<code>maxToolCallsPerStage</code>、<code>maxStageDurationMs</code>、<code>maxNoProgressStages</code>）；</li>
+            <li>等待用户输入或审批；</li>
+            <li>用户取消；</li>
+            <li>Provider / 工具 / Hook / Validator / Eval 失败。</li>
+          </ul>
+          <h4>autoContinue</h4>
+          <p><code>runtime.autoContinue: true</code>（默认）允许 Runtime 在<b>可继续的</b>停止原因后自动开启下一 Stage，不需要用户反复输入「继续」。</p>
+          <h4>恢复</h4>
+          <p>跨进程恢复<b>只从已持久化的稳定 Stage 边界</b>开始，<b>不</b>序列化 SDK 内部 RunState。等待中的 User Question 作为 Pending Input 持久化到 Session State v5；恢复时按 Provider 的 Continuation Capability 使用明确标记的 reconstructed continuation，否则保持 <code>needs-review</code>。</p>`,
+        ans: `
+          <p><b>四者的关系可以串成一句话</b>：预算决定 Stage 何时收尾 → 收尾原因若「可继续」则 autoContinue 开下一个 Stage → 所有状态在稳定 Stage 边界持久化 → 进程重启后从该边界恢复，而非从半截的模型调用恢复。</p>
+          <ul>
+            <li><b>Session 身份稳定，Stage 可增长</b>：长任务是「一个 Session、多个 Stage」，Atomic Flow 仍是一个 Run。</li>
+            <li><b>预算是安全阀</b>：防止某一 Stage 因为模型循环或工具风暴而失控，同时给「无进展」也设了上限（<code>maxNoProgressStages</code>）。</li>
+            <li><b>autoContinue 让长任务自驱</b>：符合「多步骤计划自动连续推进」的体验，但只在可继续的停止原因后触发——失败/等待审批不会被自动跳过。</li>
+            <li><b>恢复只认稳定边界</b>：这是关键的可靠性决策。外部副作用无法保证 exactly-once，所以恢复时可能进入人工复核（needs-review），而不是盲目重放。</li>
+          </ul>
+          <p><b>自动 Compact</b> 也只发生在可继续的 Stage 边界，不会打断正在执行的 Stage——这与预算/恢复共享同一「稳定边界」概念。</p>`,
+        follow: `
+          <ul>
+            <li><code>WorkspaceWriteLock</code> 的等待队列可取消吗？（答：Reader 的 ConcurrencyLimiter 与 WriteLock 等待队列本身不可取消；取得执行权后子运行需再次观察 AbortSignal。）</li>
+            <li>Workspace Checkpoint 恢复为什么要显式确认？（答：<code>/rewind</code> 会覆盖快照范围内的文件，属破坏性操作。）</li>
+          </ul>`
+      },
+      {
+        id: "q4",
+        cat: "权限与安全",
+        diff: 3,
+        tags: ["permission", "capability-scope", "sandbox", "fail-closed"],
+        q: "Yiku 的权限体系不是一个布尔开关。请描述一次高风险 Shell 命令（如 rm -rf ./dist）从发起到执行要穿过哪些层，以及每层的失败语义。",
+        idea: `
+          <p>这是压轴级安全题。面试官要看你能否说清 <b>多层纵深防御 + deny 优先 + 授权不能扩权</b> 三个原则。建议顺着「决策流程图」自上而下讲，每层都点出「谁拥有它」和「失败时怎样」。</p>`,
+        exp: `
+          <p>权限 = Capability Scope、Workspace 授权、工具静态策略、Permission Profile、Hook、人工/Managed 审批、OS Sandbox 的<b>交集</b>。授权只能在既有硬边界<b>内</b>放行，不能让配置/Skill/Hook/Agent 自行扩权。</p>
+          <h4>七个层次（自上而下）</h4>
+          <ol>
+            <li><b>Capability Scope</b>（Orchestrator）：工具对当前 Agent 是否可见。不可见 → 根本调不到。</li>
+            <li><b>Workspace Authorization</b>（CLI/Host）：只读还是读写。只读下首次写入触发升级请求。</li>
+            <li><b>Workspace Boundary</b>（agent-code）：真实路径、符号链接、路径逃逸检查。<b>硬拒绝</b>。</li>
+            <li><b>Tool/Shell Policy</b>（agent-code）：把操作分类为 <code>allow / ask / deny</code>。<code>deny</code> 直接不进入审批。</li>
+            <li><b>Permission Profile</b>（cli）：按 Policy/Command/MCP/Network 规则细化。<code>deny</code> 优先。</li>
+            <li><b>Permission Hook</b>：<code>block/stop</code> 拒绝。</li>
+            <li><b>User / Managed Policy</b>：对剩余 <code>ask</code> 给一次/Session/持久决策。无处理器 → 拒绝。</li>
+          </ol>
+          <p>之后才是 <b>Shell Sandbox</b>（macOS <code>sandbox-exec</code> / Linux rootless <code>bubblewrap</code>）——它是执行边界，不是审批系统。</p>`,
+        ans: `
+          <p>以 <code>rm -rf ./dist</code> 为例，逐层穿越：</p>
+          <ol>
+            <li><b>Capability Scope</b>：bashTool 在当前 Agent 的 Scope 内 → 通过。</li>
+            <li><b>Workspace 写入</b>：删除属写操作，若 Session 只读则请求升级为 read-write，拒绝即 Denied。</li>
+            <li><b>Boundary</b>：<code>./dist</code> 解析真实路径确认在 Workspace 内、无符号链接逃逸 → 通过；若指向外部则<b>硬拒绝</b>。</li>
+            <li><b>Shell Policy</b>：结构化 Shell Parser（非字符串前缀）识别 <code>rm -rf</code> 命中 <code>recursive-force-rm</code>，风险 high，分类为 <code>ask</code>。（若是 <code>sudo</code>/<code>mkfs</code>/<code>curl|sh</code> 则直接 <code>deny</code>，不进入审批。）</li>
+            <li><b>Permission Profile</b>：匹配 <code>commandRules</code>/<code>policyRules</code>；命中任一 <code>deny</code> 优先，否则用最具体的通配规则。</li>
+            <li><b>Permission Hook</b>：发 <code>PermissionRequest</code>；Hook <code>block/stop</code> 立即拒绝并补发 <code>PermissionDenied</code>。</li>
+            <li><b>用户审批</b>：宿主渲染审批 UI，用户可给 <code>once / session / persistent</code> 授权。</li>
+            <li><b>Sandbox 执行</b>：即便审批通过，仍必须在 Sandbox 允许范围内运行。</li>
+          </ol>
+          <h4>核心不变量</h4>
+          <ul>
+            <li>Runtime <code>deny</code> 在 Profile/Hook/人工之前生效，后续层<b>不能覆盖</b>。</li>
+            <li>Hook 的 <code>allow</code> 只能处理已进入 Hook 的请求，不能覆盖先前硬拒绝。</li>
+            <li>Workspace 写授权 ≠ 允许删除/发布/提权/任意 Shell。</li>
+            <li><b>fail-closed</b>：无审批处理器默认 deny；非交互模式缺授权直接失败，不自动选首项。被截断的命令不能生成 Session Grant Key（防止用不完整显示当授权依据）。</li>
+          </ul>`,
+        follow: `
+          <ul>
+            <li>非交互模式（<code>external</code> Policy Mode）如何放行高风险操作？（答：Workspace Trust + 显式 Managed Policy；Deny 优先、每个 Capability 精确授权、Resource 不支持通配、成功授权必须写私有 NDJSON Audit，Audit 写失败则不执行高风险操作。）</li>
+            <li>Sandbox 平台不可用时怎么办？（答：返回稳定错误，是否降级由调用方决定；Code Terminal 降级会重建 ShellPolicy 并发 <code>runtime_boundary_changed</code>；Verification Command 要求强隔离。）</li>
+          </ul>`
+      },
+      {
+        id: "q5",
+        cat: "Atomic Flow / 可观测性",
+        diff: 2,
+        tags: ["atomic-flow", "事实源", "fold", "sink", "投影"],
+        q: "为什么说 Atomic Flow 是「运行观测的唯一事实源」，而 Trajectory 和 Studio 状态是「投影」？这个设计带来哪些好处和约束？",
+        idea: `
+          <p>抓住「<b>事实源 vs 派生视图</b>」这对概念，以及支撑它的两个技术保证：<span class="hl">严格递增的 sequence</span> 和 <span class="hl">确定性 fold</span>。好处答「可重建 + 可 replay」，约束答「payload 必须有界、不能塞敏感数据」。</p>`,
+        exp: `
+          <p><code>@yiku/atomic-flow</code> 是 Run 级事件协议：统一 Atom 定义、Instance 生命周期、Sequence、Edge、Sink、JSONL 和确定性 Fold，但<b>不执行 Agent、不解释领域结果</b>。</p>
+          <h4>关键机制</h4>
+          <ul>
+            <li><b>Event 生命周期</b>：<code>scheduled → start → delta* → end</code>，或 <code>→ error</code>，或 <code>→ skipped</code>。</li>
+            <li><b>Sequence</b>：单个 Run 内<b>严格递增</b>。跨系统关联必须用 ID，不能借用墙上时钟。</li>
+            <li><b>Fold</b>：<code>foldAtomicEvents(events)</code> 按 sequence 重建 instances/edges/latestSequence。<b>相同规范事件前缀产生相同 Fold State</b>；拒绝 sequence 倒退、混合 Run、不一致 Instance。</li>
+            <li><b>Sink 降级</b>：某个 Sink 失败<b>不停止来源 Run</b>——记录降级 code、<code>snapshot().degraded=true</code>、其它 Sink 继续。</li>
+            <li><b>Payload 有界</b>：只写摘要（code/counts/durationMs/summary/title/values），<b>禁止</b>写 API Key、完整 Prompt、无限工具输出。</li>
+          </ul>`,
+        ans: `
+          <p><b>「唯一事实源」的含义</b>：所有运行事实只在 Atomic Flow 里记录一次；Trajectory（层级轨迹）和 Studio Run（观测 UI 状态）都由同一事件流<b>派生/重建</b>，自身不产生新事实。</p>
+          <p><b>为什么这样设计（好处）</b>：</p>
+          <ul>
+            <li><b>可重建</b>：因为 fold 是确定性的，任何时刻拿 JSONL 事件都能重算出完全一致的状态——UI 崩了、进程重启了都不丢真相。</li>
+            <li><b>可 replay / 可审计</b>：持久 JSONL 保存完整历史，Reader 校验每行；损坏行返回 <code>ATOMIC_FLOW_JSONL_INVALID</code> 而<b>不静默跳过</b>。</li>
+            <li><b>解耦观测与执行</b>：Sink 失败只降级不阻断主流程；Observatory 只消费事件，不能反向控制 Session。</li>
+            <li><b>多视图一致</b>：Text/Markdown/Mermaid/Trajectory/Studio 都是同一份事实的不同投影，天然一致。</li>
+          </ul>
+          <p><b>约束</b>：</p>
+          <ul>
+            <li>生产者必须在<b>同一 Instance</b> 上发终态，不能为 end 重新生成 ID。</li>
+            <li>Payload 必须有界且脱敏——大结果走 Artifact/Patch/Store Reference，不塞进事件。</li>
+            <li>Parent 表达层级、Edge 表达流程关系，两者不能互相替代。</li>
+          </ul>`,
+        follow: `
+          <ul>
+            <li>Trajectory 和 Atomic Flow 是替代关系吗？（答：不是。Atomic Flow 是事实与 replay，A2A 消息/Trajectory 用于关联与展示，各司其职。）</li>
+            <li>Studio Sink 有什么网络约束？（答：<code>AtomicStudioSink</code> 只接受回环地址；Project/Run Metadata 在首次成功投递时建立。）</li>
+          </ul>`
+      },
+      {
+        id: "q6",
+        cat: "Memory 记忆",
+        diff: 2,
+        tags: ["memories", "scope", "去重", "召回"],
+        q: "Yiku 的长期记忆如何做「隔离」与「去重」？请解释 Scope 匹配规则和幂等写入。",
+        idea: `
+          <p>两条主线：<span class="hl">Scope 匹配</span>（记录可比请求宽、不能比请求窄）和 <span class="hl">去重键 / 幂等键</span>。答完再点一句「Memory 与 Context Compact 是两件事」。</p>`,
+        exp: `
+          <p><code>@yiku/memories</code> 提供分域、可解释的长期记忆，独立于 Agent SDK。每个操作都要 <code>MemoryContext</code>：必需 <code>namespace</code> + 可选四级 Scope（userId/agentId/projectId/sessionId）。</p>
+          <h4>Scope 匹配规则</h4>
+          <p>核心口诀：<b>记录可以比请求更宽，不能比请求更窄</b>。记录某字段为 <code>null</code> → 适用于该 namespace 下任意对应请求；记录有具体值 → 请求必须携带相同值。<code>namespace</code> 始终精确匹配。</p>
+          <p>效果：项目级事实能进入项目内任意 Session，但 Session 专属记录<b>不会泄漏</b>到另一个 Session。</p>
+          <h4>去重与幂等</h4>
+          <ul>
+            <li><b>去重键</b> = <code>namespace + scopeKey + kind + fingerprint</code>。相同内容再写会合并 Tag/Metadata、取更高 Confidence/Importance、恢复 Active 并 +1 Revision。</li>
+            <li><b>幂等键</b>：显式 <code>idempotencyKey</code> 在同 namespace 唯一。相同 Key+相同 Hash 返回原记录；相同 Key+不同内容返回 <code>MEMORY_IDEMPOTENCY_CONFLICT</code>。</li>
+            <li><b>乐观并发</b>：更新要 <code>expectedRevision</code>，不匹配返回 <code>MEMORY_REVISION_CONFLICT</code>。</li>
+          </ul>`,
+        ans: `
+          <p><b>隔离</b>靠 namespace 精确匹配 + Scope「宽于请求才可召回」规则，在 Manager 与 Store <b>两层</b>校验，用稳定 Scope Key 和 Namespace Hash 防止跨用户/项目/Agent 串味。</p>
+          <p><b>去重</b>分两条：内容维度用 <code>namespace+scopeKey+kind+fingerprint</code> 做确定性去重合并；调用维度用 <code>idempotencyKey</code> 保证重试安全。二者叠加让「同一事实无论写多少次都只有一条、且重试不炸」。</p>
+          <p><b>持久 Kind → 运行时分类</b>：五种持久 Kind（decision/episode/fact/preference/procedure）投影为三类运行时分类（scenario/procedure/semantic），只影响召回解释和 Atomic Flow，不改 SQLite Schema 或查询 Scope。</p>
+          <p><b>召回</b>：无 Embedding 用 SQLite FTS5；注入 Provider 后走「FTS + 向量 → RRF 融合 → 质量重排 → 去重/多样性/预算 → renderMemoryContext」，结果带分数分解便于审计。</p>
+          <p><b>安全</b>：写入先做 Secret 脱敏、大小/Kind/日期/Tag/Metadata Policy 校验；召回内容以 <code>untrusted</code> 带边界注入；<code>memory_operation</code> 事件只含 Hash/阶段/计数，<b>不含</b> Prompt/正文。</p>`,
+        follow: `
+          <ul>
+            <li>Memory 提取的 JSON 契约长什么样？（答：顶层是 <code>MemoryDraft</code> 数组、无 <code>data/memories</code> 包装，一次最多 20 条，默认丢弃 <code>confidence &lt; 0.55</code>。）</li>
+            <li>只有什么样的输出会自动进入长期记忆？（答：启用工业 Eval 时只有 <code>accepted</code> 才自动提取；<code>degraded</code> 能完成 Session 但不自动晋升。）</li>
+          </ul>`
+      },
+      {
+        id: "q7",
+        cat: "Context Compact",
+        diff: 2,
+        tags: ["compaction", "token-budget", "原子性", "信任边界"],
+        q: "Context Compact 与 Memory 有什么本质区别？自动压缩的触发条件、原子性保证是怎样的？",
+        idea: `
+          <p>先划清「Compact 换的是<b>发给模型的会话历史</b>，Memory 管的是<b>工作记忆与长期知识</b>」这条界线，再讲触发（token 比例优先、字符回退）和原子性（只在校验通过后一次性 replace）。</p>`,
+        exp: `
+          <p>Context Compact 把过长会话历史压成一条可继续执行的摘要，解决模型上下文预算问题，<b>不</b>删除 Task/Checkpoint/Working Memory/Agent Profile/Atomic Flow/磁盘日志。</p>
+          <h4>触发（自动）</h4>
+          <p>只在<b>一个 Stage 已结束且策略决定继续</b>时调用 <code>maybeCompact()</code>——不会在模型/工具执行中插入。判断优先级：</p>
+          <ol>
+            <li>有 <code>contextWindow</code> 且有 <code>peakInputTokens</code> → 用 Token 比例；</li>
+            <li>缺任一 Token 指标 → 用 History 字符数与 <code>32768</code> 字符回退上限；</li>
+            <li>达到 <code>compactAtContextRatio</code>（默认 0.7）才压；摘要预算由 <code>compactToContextRatio</code>（默认 0.25）算；</li>
+            <li>Token 路径按每 Token 4 字符换算 <code>maxSummaryChars</code>；</li>
+            <li>成功后清空 <code>peakInputTokens</code>，下一 Stage 重新计量。</li>
+          </ol>
+          <p>约束：<code>compactToContextRatio &lt; compactAtContextRatio</code>，且都严格位于 0 和 1 之间。</p>`,
+        ans: `
+          <p><b>本质区别</b>：</p>
+          <ul>
+            <li><b>Context Compact</b> = 替换「本次发送给模型的 Conversation History」，是<b>瘦身</b>动作，产物是一条 assistant 摘要。</li>
+            <li><b>Memory</b> = 管理跨 Turn/Session 的工作记忆与长期知识，是<b>沉淀</b>动作，写入 SQLite。</li>
+            <li>二者独立：压缩不写长期记忆，记忆召回也不改会话历史。</li>
+          </ul>
+          <p><b>原子性保证</b>（很关键）：</p>
+          <ul>
+            <li><code>PreCompact</code> Hook <code>block/stop</code> → 在调用 Summarizer 前终止，History <b>不变</b>；</li>
+            <li>Summarizer 抛错 / 返回空串 / 超出字符上限 → History <b>不变</b>；</li>
+            <li>History 只在摘要完成<b>并通过校验后一次性</b> <code>replace()</code>；</li>
+            <li><code>PostCompact</code> 在替换后运行，其失败不回滚已生成摘要；</li>
+            <li>未配置 Summarizer → 手动/自动压缩都<b>显式失败</b>。</li>
+          </ul>
+          <p><b>信任边界</b>：压缩后的摘要是模型生成内容，后续 Prompt 里仍按 <code>untrusted</code> Conversation History 包装——压缩<b>不会</b>提权、扩 Capability，也不会把 Hook/Workspace 内容变成 System Instructions。</p>
+          <p><b>观测</b>：成功发 <code>context_compacted</code>（只记条目数，不含摘要正文），投影为 <code>context.compact</code> Atom；CLI 收到后重置 Context 使用量。</p>`,
+        follow: `
+          <ul>
+            <li>手动 <code>/compact</code> 会立刻持久化吗？（答：不会。它先改内存 History，在后续正常 Checkpoint 时持久化；自动路径才立即写 Session State。）</li>
+            <li>为什么原始 Transcript/JSONL/Atomic Flow 不被重写？（答：Compact 只减少送模型的历史，审计与事实源必须保真。）</li>
+          </ul>`
+      },
+      {
+        id: "q8",
+        cat: "Subagents / A2A",
+        diff: 3,
+        tags: ["handoff", "delegate", "session-subagent", "隔离"],
+        q: "Handoff、Configured Delegate、Session Subagent 三种协作机制在生命周期、控制权和持久化上有何不同？分别适合什么场景？",
+        idea: `
+          <p>用一张三列对比表打底：<b>生命周期 / 控制权 / 持久化 / 适用场景</b>。再补 Delegate 的三种访问模式（只读、共享读写、Worktree）和它们的隔离手段。</p>`,
+        exp: `
+          <p>三者共享 Agent Factory 和运行观测，但语义不同：</p>
+          <table style="width:100%;border-collapse:collapse;font-size:0.82rem">
+            <tr style="color:var(--cyan)"><td style="padding:4px 6px;border-bottom:1px solid var(--line)">机制</td><td style="border-bottom:1px solid var(--line)">生命周期</td><td style="border-bottom:1px solid var(--line)">控制权</td><td style="border-bottom:1px solid var(--line)">场景</td></tr>
+            <tr><td style="padding:4px 6px"><b>Handoff</b></td><td>当前 SDK Run</td><td>转移给目标 Agent</td><td>专业路由</td></tr>
+            <tr><td style="padding:4px 6px"><b>Delegate</b></td><td>当前 Tool Call</td><td>父等待结果后继续</td><td>有界并行子任务</td></tr>
+            <tr><td style="padding:4px 6px"><b>Session Subagent</b></td><td>Profile 持久 / Instance 每次运行</td><td>由管理服务显式启动</td><td>可复用专家角色</td></tr>
+          </table>
+          <h4>Delegate 三种访问模式</h4>
+          <ul>
+            <li><b>只读</b>：可读不可写，适合审查/搜索，受 <code>maxParallelReaders</code> 限制。</li>
+            <li><b>共享读写</b>：同一 Workspace，写操作经 <code>WorkspaceWriteLock</code> 串行化。</li>
+            <li><b>Worktree</b>：独立 Git Worktree 执行，返回变更摘要和 Patch，父 Agent 决定是否应用。</li>
+          </ul>`,
+        ans: `
+          <p><b>三句话区分</b>：Handoff 是「交棒」——控制权在同一 SDK Run 内转移、不创建子 Session；Delegate 是「外包一个有界子任务」——父 Agent 通过工具调用发起、等结果回来再继续；Session Subagent 是「雇一个可复用专家」——有持久 Profile、可多次实例化。</p>
+          <p><b>关键差异细节</b>：</p>
+          <ul>
+            <li>Handoff 目标必须在当前 Agent 的 <code>handoffs</code> 里，Graph 构建<b>拒绝环</b>；因为控制权已转移，它<b>不</b>返回可供父 Agent 继续推理的结果。</li>
+            <li>Delegate 的 <code>SubagentStop</code> Hook <code>block</code> 不是终态失败，而是把 reasons 作为反馈<b>再次调用</b>子 Agent。</li>
+            <li>Session Subagent 走 <code>AgentManagementService</code> 管理 Profile/Instance，<b>不</b>经过 SubagentRuntime 的 Start/Stop 重试循环；CLI 创建的 Session Subagent 显式关闭独立工业 Eval（避免把子运行误当顶层门禁），但领域 Validator 仍生效。</li>
+          </ul>
+          <p><b>安全不变量</b>：子 Agent 不继承未声明 Skill；Workspace Scope 只能<b>缩小</b>父范围；只读子 Agent 写入仍需权限升级；Hook <code>allow</code> 不能覆盖 Runtime <code>deny</code>。父 Agent <b>不</b>自动获得子 Agent 的完整 Transcript/Memory/内部推理——要复用的信息必须进最终输出或结构化 Artifact。</p>
+          <p><b>选型建议</b>：代码审查/仓库理解默认只读 Delegate；隔离生成物或高风险修改用 Worktree；可复用职责（如固定 reviewer）用 Session Subagent；纯路由用 Handoff。</p>`,
+        follow: `
+          <ul>
+            <li>A2A 消息里 <code>profileId</code>、<code>agentId</code>、<code>agentSessionId</code>、<code>sessionId</code> 能互换吗？（答：不能。profileId 是可复用定义、agentId 是运行实例、agentSessionId 是子逻辑 Session、sessionId 是顶层父 Session。）</li>
+            <li>只读 Delegate 报告了文件变更会怎样？（答：整个调用失败——只读契约被违反。）</li>
+          </ul>`
+      },
+      {
+        id: "q9",
+        cat: "Evals 质量门禁",
+        diff: 3,
+        tags: ["evals", "completion-policy", "scorecard", "repair"],
+        q: "Yiku 的工业 Eval 链路如何决定一次任务是「接受 / 降级 / 重试 / 待复核 / 拒绝」？请讲讲评分规则和 Completion Policy 的决策顺序。",
+        idea: `
+          <p>先讲链路（Planner → Scheduler → Scorecard → CompletionPolicy），再重点讲 <b>评分不能被平均分抵消 Blocker</b> 和 <b>决策顺序是有优先级的 if-else 链</b>。强调「缺失结果不能提高分数」。</p>`,
+        exp: `
+          <p><code>@yiku/evals</code> 对<b>已完成</b>的 Run 做可解释、可持久化的质量评估，它消费最终输出/Artifact/Receipt/Manifest/Atomic Snapshot，<b>不</b>执行 Agent、<b>不</b>独立决定 Session 终态。</p>
+          <h4>链路</h4>
+          <p><code>EvalPlanner</code>（Profile+Registry → 不可变 Plan + Digest）→ <code>EvalScheduler</code>（按依赖 DAG 跑 Check，默认单 Run 4 并发、全局 8 Run、单 Run≤32 Check）→ <code>Scorecard</code> → <code>CompletionPolicy</code>。</p>
+          <h4>评分规则</h4>
+          <ul>
+            <li><code>error</code>/<code>not-run</code>/缺失 Score <b>按 0 计入分母</b>；</li>
+            <li>Blocker、Secret、Boundary Violation、Artifact Drift <b>不能被平均分抵消</b>；</li>
+            <li>Digest 不含运行时耗时等非确定性噪声 → 相同 Plan+Input+结果产生相同 Scorecard Digest；</li>
+            <li>Grade：<code>S≥0.95 / A≥0.90 / B≥0.80 / C≥0.70</code>，其余 D。</li>
+            <li><code>qualityPassed</code> 同时要求：无 Blocker 非通过、无 partial/unknown Receipt、所有 Required Check 通过、总分达阈值。</li>
+          </ul>`,
+        ans: `
+          <p><b>Completion Policy 的决策顺序是一条有优先级的 if-else 链</b>：</p>
+          <ol>
+            <li><code>partial</code>/<code>unknown</code> Operation Receipt → <b>needs-review</b>；</li>
+            <li>Blocker 失败 → 有可修复项且有预算则 <b>retry</b>，否则 <b>rejected</b>；</li>
+            <li>Required Check 为 <code>error</code>/<code>not-run</code> → <b>needs-review</b>；</li>
+            <li>Required Check 失败或总分不足 → <b>retry</b> 或 <b>rejected</b>；</li>
+            <li>仅 Optional Check 未通过 → <b>degraded</b>；</li>
+            <li>其余 → <b>accepted</b>。</li>
+          </ol>
+          <p><b>五种决策语义</b>：accepted（达标）、degraded（可完成但有降级）、retry（预算内可修复重评）、needs-review（证据不足/未知副作用/基础设施需人工判断）、rejected（硬门禁或质量失败）。</p>
+          <p><b>observe vs enforce</b>：都生成完整记录。<code>observe</code> 不因非接受决策抛错也不触发自动修复；<code>enforce</code>（CLI 默认）对 needs-review/rejected 抛 <code>EvaluationGateError</code>。</p>
+          <p><b>修复语义</b>：一次修复保持同一 Task、创建新 Attempt、复用同一 Plan Digest，受 <code>maxRepairAttempts</code>（默认 1）限制，超预算不无限循环。多阶段续跑用 <code>.eval-&lt;序号&gt;</code> 派生独立 Eval Run ID，通过 <code>flowRef</code> 关联同一 Atomic Flow，不覆盖前阶段记录。</p>
+          <p><b>底线原则</b>：任何缺失结果都不能提高分数；Store 冲突/损坏/权限错误不伪装为通过；Observer/Studio 故障只影响观测不改 Scorecard。非交互退出码：needs-review=6，rejected=8。</p>`,
+        follow: `
+          <ul>
+            <li>Optional Judge（模型判断）能抹掉「缺失 Evidence / Unsupported Claim」吗？（答：不能。确定性检查优先，Judge 不能替代 Artifact/Evidence/协议完整性。）</li>
+            <li>Baseline 为什么要按环境隔离？（答：不能把开发机结果直接当 Linux CI 阈值，要按 Suite/模型/Prompt 版本/环境隔离。）</li>
+          </ul>`
+      },
+      {
+        id: "q10",
+        cat: "Prompt 信任边界",
+        diff: 3,
+        tags: ["prompt-injection", "untrusted", "PromptGuard", "信任级别"],
+        q: "Yiku 如何防御 Prompt 注入？哪些内容会被当作 untrusted，PromptGuard 又扮演什么角色？",
+        idea: `
+          <p>核心：<b>只有宿主显式提供的 Runtime/User Instructions 能进 System Instructions，其它一律 untrusted 带边界注入</b>。再区分 PromptGuard 是「风险信号」而非「阻断决策者」。</p>`,
+        exp: `
+          <p>Runtime 用 <code>PromptSegment</code> 保留上下文的来源、类型、信任级别、可选 Source ID 和 Digest。</p>
+          <h4>会被当作 untrusted 的内容</h4>
+          <ul>
+            <li>Conversation History 和模型生成的压缩摘要；</li>
+            <li>Workspace Instructions、项目 <code>config.yaml</code>/<code>.env</code> Instructions；</li>
+            <li>Project Skill、Project/Session Agent Profile；</li>
+            <li>Hook Additional Context 和 Memory Recall；</li>
+            <li>Tool、MCP、Hosted Web Search、Shell、Apply Patch 的输出。</li>
+          </ul>
+          <p>这些内容经 XML 转义，附带「不可覆盖 Runtime Instructions、不可提权、不可扩展 Tool Scope」的声明。OpenAI Runner 在每次模型调用前<b>重新包装</b> Tool Result——CLI/Trace 保留原始展示，模型只读受边界保护的副本。</p>`,
+        ans: `
+          <p><b>防御主线是「信任分级 + 边界包装」</b>：</p>
+          <ul>
+            <li><b>白名单进 System</b>：只有宿主显式提供的 Runtime/User Instructions 能进入 Agent System Instructions。</li>
+            <li><b>其余全部 untrusted</b>：历史、Workspace/项目配置、Skill、Profile、Hook Context、Memory 召回、所有工具/MCP/Web/Shell 输出，统一作为带边界的 <code>untrusted</code> User-level Reference 注入，经 XML 转义并声明不可提权。</li>
+            <li><b>每轮重新包装</b>：Runner 每次模型调用前重包 Tool Result，防止「一次注入、永久污染」。</li>
+          </ul>
+          <p><b>PromptGuard 的角色（关键区分）</b>：它拒绝空输入、异常控制字符、超预算 Prompt/Segment，并对指令覆盖、Prompt 窃取、角色替换、Tool 强迫等特征发出<b>不含原文</b>的 <code>prompt_risk_detected</code>。但它<b>只提供风险信号</b>——是否阻断由 Managed Hook 或宿主 Policy 决定。<b>Tool Permission 和 Workspace Boundary 始终独立执行</b>，不依赖 PromptGuard。</p>
+          <p><b>为什么这样分工</b>：把「检测」与「授权决策」解耦，避免用一个启发式检测器承担安全边界；真正的硬边界仍是权限层和 Sandbox。即使注入绕过了 PromptGuard，也无法突破 Capability Scope 和 Workspace Boundary。</p>`,
+        follow: `
+          <ul>
+            <li>压缩摘要属于可信内容吗？（答：不。它是模型生成内容，仍按 untrusted Conversation History 包装。）</li>
+            <li>项目里的 <code>config.yaml</code> 能给 Agent 提权吗？（答：不能。项目内容不能通过配置自行提升宿主权限，能力取多方交集。）</li>
+          </ul>`
+      },
+      {
+        id: "q11",
+        cat: "工程实践",
+        diff: 1,
+        tags: ["pnpm", "tsc-b", "biome", "vitest", "验证门禁"],
+        q: "在这个仓库里做一处 CLI 改动后，应该跑哪些命令来验证？为什么用 TypeScript Project References 和 Biome？",
+        idea: `
+          <p>直接背出验证三件套并解释顺序（lint → build → test），再讲 <code>tsc -b</code> 增量编译和 Biome 一体化的动机。答出「playground 不跑测试」这个特例会加分。</p>`,
+        exp: `
+          <p>环境约束：Node <code>&gt;=22.13.0</code>，必须用 Corepack 的 pnpm，构建用 TS Project References（<code>tsc -b</code>），检查用 Biome（不引入 ESLint/Prettier）。根 Vitest 用 V8 Coverage，语句/分支/函数/行覆盖率门槛都是 90%。</p>
+          <h4>常用命令</h4>
+          <pre><code>corepack pnpm install
+corepack pnpm build      <span class="cm"># tsc -b + observatory build:web</span>
+corepack pnpm lint       <span class="cm"># biome check .</span>
+corepack pnpm test       <span class="cm"># vitest run --coverage</span>
+corepack pnpm check      <span class="cm"># lint + build + test</span></code></pre>`,
+        ans: `
+          <p><b>CLI 改动的最小验证</b>（AGENTS.md 明确要求）：</p>
+          <pre><code>corepack pnpm --filter @yiku/cli test
+corepack pnpm lint
+corepack pnpm build</code></pre>
+          <p>先跑受影响包的<b>聚焦测试</b>，再跑根级门禁；跨包协议/Runtime/Hook/Memory/Eval 改动还要跑受影响包测试，提交前优先 <code>corepack pnpm check</code>。</p>
+          <p><b>为什么用 <code>tsc -b</code>（Project References）</b>：Monorepo 里包之间有依赖图，Project References 支持<b>增量、按依赖顺序</b>编译，只重建受影响的包，避免全量重编；也强制包边界（不能引用未声明依赖）。正式包必须保留 <code>"watch": "tsc -b --watch --preserveWatchOutput"</code>。</p>
+          <p><b>为什么用 Biome</b>：一个工具同时做 format + lint，速度快、配置集中，避免 ESLint+Prettier 的规则冲突和多份配置维护成本。</p>
+          <p><b>重要特例</b>：<code>playground/</code> 只做示例/实验，<b>禁止</b>新增测试文件/脚本/依赖；它的改动只过 typecheck、Biome、build 和必要人工运行，<b>不</b>纳入 Vitest 收集与覆盖率。纯类型文件和只导出的入口不计覆盖率。</p>`,
+        follow: `
+          <ul>
+            <li>为什么只用相对导入、不引路径别名？（答：AGENTS.md 约定；保持包边界清晰、避免构建器/TS 解析差异。）</li>
+            <li><code>index.ts</code> 应该放什么？（答：只负责导出。业务逻辑放职责单一的小模块 + 模块内局部 <code>types.ts</code>。）</li>
+          </ul>`
+      },
+      {
+        id: "q12",
+        cat: "权限与安全",
+        diff: 2,
+        tags: ["hooks", "trust", "executor", "lifecycle"],
+        q: "Hooks 在 Yiku 里承担什么职责？为什么规定「Hook 的 allow 不能覆盖 Runtime 的 deny」？",
+        idea: `
+          <p>先定位 Hooks 是 Claude 兼容的生命周期策略层（六类 Executor），再讲它在权限链里的位置，最后从「安全单调性」角度解释 allow 不能覆盖 deny。</p>`,
+        exp: `
+          <p><code>@yiku/hooks</code> 拥有 Hook 事件、配置编译、匹配、六类 Executor、Decision、Trust 和安全限制，<b>不</b>依赖 Orchestrator/Agent SDK/CLI/Atomic Flow。它在生命周期边界运行：Session/Prompt Hook、Tool Hook（副作用前后包围）、PreCompact/PostCompact、SubagentStart/Stop、PermissionRequest/PermissionDenied 等。</p>
+          <h4>关键顺序</h4>
+          <ol>
+            <li>Session/Prompt Hook 在对应生命周期边界运行；</li>
+            <li>Memory Recall 在 Agent 上下文构建前完成；</li>
+            <li>Tool Hook 在副作用前后包围 Tool 调用；</li>
+            <li>领域 Validator 在输出后运行；</li>
+            <li>工业 Evals 读取最终产物；</li>
+            <li>Completion Policy 决定终态。</li>
+          </ol>`,
+        ans: `
+          <p><b>职责</b>：Hooks 是可插拔的<b>生命周期策略层</b>，让用户/管理策略在 Session、Prompt、Tool、Compact、Subagent、Permission 等边界注入决策（allow/block/stop）或附加上下文，而不用改 Orchestrator 代码。它用独立 Trust Store 管理信任，不能用 Permission Profile 替代。</p>
+          <p><b>为什么 allow 不能覆盖 deny</b>（安全单调性）：</p>
+          <ul>
+            <li>权限体系是<b>多层交集</b>，Runtime 的 <code>deny</code> 是<b>硬边界</b>，在调用 Profile/Hook/人工之前就生效；</li>
+            <li>如果允许后置的 Hook <code>allow</code> 翻案，就等于给了「用配置/Skill 提交的 Hook」一条<b>提权后门</b>——而项目内容本就不该自行扩权；</li>
+            <li>因此 Hook 的 <code>allow</code> 只能作用于「已经进入 Hook 的 <code>ask</code> 请求」，<b>只能收紧不能放宽</b>先前的硬拒绝。这保证无论加多少 Hook，安全边界只会更严不会更松。</li>
+          </ul>
+          <p><b>PreCompact 的 block/stop</b> 是这个原则的具体体现：它能在调用 Summarizer 前终止压缩（收紧），但不能强行改写权限或历史。</p>`,
+        follow: `
+          <ul>
+            <li>Hook 的 additionalContext 进入 Prompt 时是什么信任级别？（答：untrusted，带边界注入，不能变成 System Instructions。）</li>
+            <li>SubagentStop 的 block 意味着子任务失败吗？（答：不。它把 reasons 作为反馈让子 Agent 重跑。）</li>
+          </ul>`
+      },
+      {
+        id: "q13",
+        cat: "权限与安全",
+        diff: 2,
+        tags: ["sandbox", "bubblewrap", "sandbox-exec", "隔离原语"],
+        q: "@yiku/sandbox 的职责边界是什么？它在 macOS 和 Linux 上分别怎么实现隔离，平台不可用时如何处理？",
+        idea: `
+          <p>强调 sandbox 是「纯进程隔离原语」——不解析命令、不审批、不启动子进程。再讲平台实现差异，最后讲「不可用时不自动降级」这个安全取向。</p>`,
+        exp: `
+          <p><code>@yiku/sandbox</code> 把授权 Workspace、网络策略和运行时只读路径<b>编译</b>为平台隔离启动描述：</p>
+          <ul>
+            <li><b>macOS</b>：生成 <code>sandbox-exec</code> Profile；</li>
+            <li><b>Linux</b>：rootless <code>bubblewrap</code>，只读挂载 Runtime 路径、按 Workspace Access 挂载工作目录；</li>
+            <li><b>Windows</b>：在实现 Job Object/ACL Sandbox 前返回不可用错误。</li>
+          </ul>
+          <p>它<b>不</b>解析命令、<b>不</b>审批权限、<b>不</b>启动子进程、<b>不</b>执行 Agent Session。平台能力不可用时返回稳定错误，<b>不自行降级</b> Host Shell。</p>`,
+        ans: `
+          <p><b>职责边界</b>：sandbox 是一个「无 Agent 依赖的进程隔离 Primitive」。它只做一件事——把「哪些路径可读写、网络是否放行、哪些是只读 Runtime 路径」编译成 OS 级隔离描述。命令分类、权限审批、Host Policy 降级全都由<b>调用方</b>显式拥有。</p>
+          <p><b>为什么这样切分</b>：让隔离机制和策略解耦——同一个隔离原语可被不同宿主复用，而策略（哪些命令要 ask/deny）留在 <code>ShellPolicy</code> 和 Permission 层。这也符合「Sandbox 是执行边界，不是审批系统」。</p>
+          <p><b>平台不可用时不自动扩大边界</b>：这是关键安全取向——宁可失败也不静默降级到无隔离的 Host Shell。若要降级，必须由宿主<b>显式</b>提供 <code>HostPolicyShellSandbox</code>；降级会重建 <code>ShellPolicy</code> 并发出 <code>runtime_boundary_changed</code> 事件（在 Atomic Flow 投影为 <code>runtime.boundary</code>），让边界变化<b>可观测、可审计</b>。而 Verification Command 要求强隔离，不接受普通 Session 授权当验证隔离。</p>`,
+        follow: `
+          <ul>
+            <li>为什么 Verification Command 不能复用普通 Session 授权？（答：验证要求声明的只读/隔离执行约束，避免被测代码借普通授权污染验证。）</li>
+            <li><code>~/.yiku</code> 全都能访问吗？（答：不。只有被宿主显式加入的 <code>~/.yiku</code> 根可访问，不等于整个用户 Home。）</li>
+          </ul>`
+      },
+      {
+        id: "q14",
+        cat: "工程实践",
+        diff: 2,
+        tags: ["config", "storage", "merge", "workspace-isolation"],
+        q: "Yiku 的配置与存储是怎么组织的？用户配置与项目配置如何合并，运行数据存在哪里？",
+        idea: `
+          <p>两条线：配置<b>深度合并</b>（项目覆盖用户，对象递归、数组/标量整体替换）和存储<b>按 Workspace 隔离</b>（不写进项目目录）。再点模型选择优先级。</p>`,
+        exp: `
+          <p><code>@yiku/config</code> 提供 YAML + <code>.env</code> 合并和 <code>~/.yiku</code> 路径解析。</p>
+          <h4>配置来源与合并</h4>
+          <p>YAML：<code>~/.yiku/config.yaml</code> → <code>&lt;workspace&gt;/config.yaml</code>，<b>项目字段覆盖用户字段</b>；两个值都是对象时<b>递归合并</b>，数组和标量<b>整体替换</b>。</p>
+          <p>环境变量顺序（后覆盖前）：<code>~/.yiku/.env</code> → 进程环境 → <code>&lt;workspace&gt;/.env</code> → 宿主显式 <code>env</code>。<code>loadEnvFile()</code> 只读明确文件，不向父目录搜索。</p>`,
+        ans: `
+          <p><b>配置合并规则</b>：用户全局配置和项目配置<b>深度合并、项目优先</b>；对象递归合并，数组/标量整体替换。密钥走 <code>.env</code>（<code>~/.yiku/.env</code> 与 Workspace <code>.env</code>），<b>不</b>放进 <code>config.yaml</code>。未知字段、无效引用、Managed Policy 禁止的能力在运行前<b>失败</b>（fail-fast）。</p>
+          <p><b>存储隔离</b>（安全关键）：全局配置/密钥/权限在 <code>~/.yiku</code>；项目 Session/日志/Evals/Memory 在：</p>
+          <pre><code>~/.yiku/workspaces/&lt;parent&gt;_&lt;workspace&gt;[_&lt;8-char-hash&gt;]/</code></pre>
+          <p>只有 Workspace 名冲突时才追加 8 位路径摘要。<b>运行数据不写入项目内的 <code>.yiku</code></b>；旧的 <code>yiku_</code> 前缀目录不会被自动扫描或迁移。这符合「模型配置只在本地、不上传」的隐私约束。</p>
+          <p><b>模型选择优先级</b>：① 已持久化 Session Model 或显式 <code>modelKey</code>（含 <code>/model</code> 切换值）→ ② <code>--agent</code> 对应 Agent Model → ③ <code>AI_MODEL</code> → ④ <code>models.default</code> → ⑤ <code>AI_MODEL_NAME</code>。</p>`,
+        follow: `
+          <ul>
+            <li>为什么运行数据不写进项目目录？（答：避免污染仓库、避免把 Session/密钥关联物提交进 Git，且便于按 Workspace 隔离多项目。）</li>
+            <li>API Key 应该放哪？（答：<code>~/.yiku/.env</code> 或 Workspace <code>.env</code>，绝不放 <code>config.yaml</code>。）</li>
+          </ul>`
+      },
+      {
+        id: "q15",
+        cat: "工程实践",
+        diff: 1,
+        tags: ["cli", "交互不变量", "context-usage", "gitignore"],
+        q: "CLI 有哪些必须保持的「交互不变量」？举几个例子说明为什么它们重要。",
+        idea: `
+          <p>这题考对产品细节的敏感度。挑 4 个不变量讲清「是什么 + 为什么」：Context 单位、状态栏实时刷新、@ 文件筛选遵守 .gitignore、session_failed 保留可读原因。</p>`,
+        exp: `
+          <p>AGENTS.md 列出的 CLI 交互不变量包括：</p>
+          <ul>
+            <li>Context Token 紧凑单位统一用大写 <code>K</code>/<code>M</code>；</li>
+            <li>底部状态栏 Context 进度必须随 <code>usage_updated</code> 事件<b>实时刷新</b>；未知上限显示 <code>unavailable</code>；</li>
+            <li><code>@</code> 文件筛选必须应用工作区根 <code>.gitignore</code> 规则，被忽略目录<b>不再递归</b>；</li>
+            <li>收到 <code>session_failed</code> 后，时间线必须保留<b>可读失败原因</b>，有源码位置时一并展示，不能只显示 <code>failed</code>；</li>
+            <li>Tool/Assistant/Subagent/错误使用现有 Append-only 时间线，不绕过 Orchestrator 自建并行状态源。</li>
+          </ul>`,
+        ans: `
+          <p><b>为什么这些不变量重要</b>（挑重点讲）：</p>
+          <ul>
+            <li><b>Context 单位统一 + 实时刷新</b>：用户长期运行时靠状态栏判断「还能聊多久 / 何时会压缩」。单位不统一或不刷新会误导决策；未知上限老实显示 <code>unavailable</code> 比编造一个数更可信。</li>
+            <li><b>@ 文件筛选遵守 .gitignore 且不递归被忽略目录</b>：既是性能（不扫 <code>node_modules</code>/<code>dist</code>），也是正确性和隐私（不把被忽略文件暴露给补全）。</li>
+            <li><b>session_failed 保留可读原因 + 源码位置</b>：失败诊断是 Agent 产品的核心体验；只显示 <code>failed</code> 会让用户无从下手。</li>
+            <li><b>Append-only 时间线、不自建并行状态源</b>：保证 UI 与 Atomic Flow「唯一事实源」一致，不出现两套互相矛盾的状态。</li>
+          </ul>
+          <p>本质上这些不变量都在守护三件事：<b>信息真实（不编造）、状态一致（单一事实源）、隐私与性能（尊重 .gitignore）</b>。</p>`,
+        follow: `
+          <ul>
+            <li>多步骤计划执行时 CLI 的交互期望是什么？（答：自动连续推进、减少「继续」类重复确认——对应 autoContinue。）</li>
+            <li>为什么 <code>/rewind</code> 前要显式确认？（答：Checkpoint 恢复会覆盖文件，是破坏性操作。）</li>
+          </ul>`
+      },
+      {
+        id: "q16",
+        cat: "Atomic Flow / 可观测性",
+        diff: 2,
+        tags: ["trajectory", "flow-graph", "投影", "职责分离"],
+        q: "Trajectory 和 flow-graph 各自解决什么问题？为什么 flow-graph 要做到「不依赖 React/DOM/Atomic Flow/业务语义」？",
+        idea: `
+          <p>Trajectory = 事实的层级投影 + 多格式渲染；flow-graph = 纯几何布线引擎。核心论点是「把可复用的纯算法与业务/渲染彻底解耦」。</p>`,
+        exp: `
+          <p><b><code>@yiku/trajectory</code></b>：把 Atomic Flow <b>投影</b>为层级执行轨迹，提供 Text、Markdown、Mermaid、JSONL Trace 能力。它是<b>派生视图，不是事实源</b>。</p>
+          <p><b><code>@yiku/flow-graph</code></b>：提供矩形节点端口分配、正交布线、障碍规避、路径优化、SVG Path 和诊断。它<b>不</b>依赖 React、DOM、Atomic Flow 或业务语义。</p>`,
+        ans: `
+          <p><b>Trajectory 解决的问题</b>：把「一堆有序事件」变成人能读懂的<b>层级结构</b>（谁调用了谁、嵌套关系），并渲染成 Text/Markdown/Mermaid/JSONL 供不同消费者用。因为它是投影，所以能随时从事件流重建，且不会与事实源冲突。</p>
+          <p><b>flow-graph 解决的问题</b>：给定一批节点和连接，算出<b>好看且不重叠的正交连线</b>（端口分配、绕障、路径优化、SVG Path）。这是纯几何/图论问题。</p>
+          <p><b>为什么 flow-graph 要零依赖 React/DOM/业务</b>：</p>
+          <ul>
+            <li><b>可复用性</b>：布线算法与「画什么业务节点、什么颜色、什么运行状态」无关，解耦后能被任何可视化场景复用，甚至能在 Web Worker 里跑（构建产物里确实有 <code>flow-layout-worker</code>）。</li>
+            <li><b>可测试性</b>：纯函数式几何计算，输入输出确定，不需要 DOM 环境就能单测。</li>
+            <li><b>边界纪律</b>：「Flow Graph 只处理几何与路由，不决定业务节点、颜色或运行状态」是明文不变量——防止把业务耦合渗进通用算法层。</li>
+          </ul>
+          <p>这与 Atomic Flow 的「事实源 vs 投影」是同一种设计哲学：<b>把稳定的底层能力与易变的上层表现分开</b>。</p>`,
+        follow: `
+          <ul>
+            <li>Mermaid 图是事实还是投影？（答：投影。由 Trajectory 从 Atomic Flow 事件派生。）</li>
+            <li>谁负责把 Atomic Flow 适配成 Studio 能消费的 Event？（答：Observatory 插件，而非 Studio 本身——Studio 保持协议无关。）</li>
+          </ul>`
+      },
+      {
+        id: "q17",
+        cat: "Subagents / A2A",
+        diff: 3,
+        tags: ["research-agent", "evidence", "web-search", "claim"],
+        q: "Research Agent 与 Code Agent 在工具组合和质量校验上有何不同？为什么强调「不给 Code Agent 伪造 Web Evidence」？",
+        idea: `
+          <p>对比两种 Agent 的 Factory 工具组合，强调 Research 有 Evidence/Claim Ledger 和报告验证这套证据链，再从「防幻觉/可审计」角度解释隔离证据能力的意义。</p>`,
+        exp: `
+          <p><b>Code Agent</b>（<code>@yiku/agent-code</code>）：Workspace 工具、权限协议、Shell Policy、Code Eval（文件 Before/After Snapshot、Artifact Digest、Symlink 证据、Verification Command）。默认 Skills：<code>agents + code + skills + tasks</code>。</p>
+          <p><b>Research Agent</b>（<code>@yiku/agent-research</code>）：组合工具为</p>
+          <pre><code>web_search + recordEvidenceTool + recordResearchClaimTool
++ skillListTool + skillInspectTool + skillRunTool
++ 显式声明的 MCP / Delegate / 受限工具</code></pre>
+          <p>还有 Evidence/Claim Ledger、报告验证、Research Eval（Claim/Citation、冲突、来源多样性、时效、权威性、报告结构）。</p>`,
+        ans: `
+          <p><b>工具组合差异</b>：Code Agent 面向「改代码 + 验证」，工具是 Workspace 文件操作 + Shell + Verification Command；Research Agent 面向「查证据 + 写可信报告」，工具是 <code>web_search</code> + 证据/主张记录 Ledger。<b>Research 默认拿不到 Code Workspace 工具</b>，除非宿主在配置中显式声明并通过 Permission/Workspace Access/Managed Policy。</p>
+          <p><b>质量校验差异</b>：Code Eval 校验文件变更范围、Artifact 一致性、边界证据、Verification Command（lint/test 等）；Research Eval 校验 Claim 有 Citation 支撑、来源独立域数量（<code>minimumIndependentDomains</code>）、时效（<code>freshnessDays</code>）、无未支撑主张。两者都不能被 Optional Judge 抹掉硬性缺陷。</p>
+          <p><b>为什么「不给 Code Agent 伪造 Web Evidence」</b>：</p>
+          <ul>
+            <li><b>防幻觉</b>：Web 证据必须来自真实 <code>web_search</code> 并进 Evidence Ledger，由 Research Eval 校验 Citation。若让 Code Agent 随口"引用"网页，就绕过了证据链，等于允许幻觉冒充事实。</li>
+            <li><b>可审计</b>：证据能力和校验绑定在 Research Agent Type 上，保证「有 Claim 必有可追溯来源」。跨 Agent 用错类型会破坏这条审计保证。</li>
+            <li><b>能力边界</b>：Research Web Search 要求模型/Provider 支持 Responses API；把它塞给 Code Agent 既不合边界也无对应校验兜底。</li>
+          </ul>`,
+        follow: `
+          <ul>
+            <li>Research Playground 用哪条执行入口？（答：低层 <code>AgentFactory</code> + <code>run()</code>，自行装配配置和结果适配。）</li>
+            <li>子 Research 任务的结果在父 Agent 使用前要检查什么？（答：Validator、Eval 和 Artifact，失败结果不能当已验证 Deliverable。）</li>
+          </ul>`
+      },
+      {
+        id: "q18",
+        cat: "架构与包边界",
+        diff: 3,
+        tags: ["边界债务", "重构", "runtime-kernel", "权衡"],
+        q: "文档坦承了几处「当前边界债务」。请举例说明，并谈谈你会如何权衡是否偿还这些债务。",
+        idea: `
+          <p>这题考「工程判断力」而非记忆。先准确复述 2-3 条债务，再用「收益 vs 成本 vs 风险」框架谈偿还策略，避免为重构而重构。</p>`,
+        exp: `
+          <p>文档明确记录的边界债务包括：</p>
+          <ul>
+            <li>通用 Permission、User Question、Tool Effect、Workspace Access 契约仍定义在 <code>@yiku/agent-code</code>，导致 Orchestrator 即使只跑其它 Agent 也<b>必须安装 Code 包</b>；</li>
+            <li>Orchestrator 同时是 Runtime Kernel 和 Yiku 默认 Code/Research 产品装配；CLI 又<b>重复注册</b>默认 Factory，新增内置 Agent 要同步检查两处；</li>
+            <li><code>@yiku/evals</code> 仍定义 <code>ResearchClaimRecord</code> 等 Research 领域类型，通用评估协议绑定了 Research；</li>
+            <li><code>@yiku/atomic-flow</code> 内置了 <code>AtomicStudioSink</code> 的 HTTP 路径与 Studio Run Metadata，事实协议与默认观测传输未完全拆开；</li>
+            <li>Observatory 直接依赖多个领域 Atom Catalog。</li>
+          </ul>`,
+        ans: `
+          <p><b>先承认这是「已知且被记录」的债务</b>——文档明确说「这些描述当前代码所有权，不表示允许基础包继续引入具体 Agent 协议」。这本身是好实践：债务显性化才能被管理。</p>
+          <p><b>我的权衡框架</b>：</p>
+          <ul>
+            <li><b>看是否阻塞新需求</b>：比如「Permission 契约在 Code 包」——只有当真的要发一个<b>不含 Code Agent 的宿主/发行版</b>时，这条债务才产生实际成本。若近期没有该需求，优先级低。</li>
+            <li><b>看变更放大风险</b>：「CLI 与 Orchestrator 重复注册 Factory」会让「新增内置 Agent」这类操作出错概率翻倍。如果团队正频繁加 Agent 类型，就该优先收口到单一注册点——这是<b>高频操作的正确性</b>问题，收益明确。</li>
+            <li><b>看协议纯度的长期价值</b>：把 <code>atomic-flow</code> 里的 <code>AtomicStudioSink</code> HTTP 传输抽出去、让 evals 的 Research 类型上移，属于「保持基础协议纯净」的投资。收益是长期可复用，但不紧急——适合在触碰相关代码时<b>顺手偿还（boy-scout rule）</b>，而非专门立项。</li>
+          </ul>
+          <p><b>结论</b>：我会优先偿还「重复 Factory 注册」（高频、易错、收益直接），把「契约上移 / 协议纯化」列为渐进式偿还；而不会为了架构洁癖在没有实际宿主需求时就大改 Permission 契约归属——<b>债务偿还要由真实需求和风险驱动，不为重构而重构</b>，这也契合仓库「保持改动局部、最保守一致」的约定。</p>`,
+        follow: `
+          <ul>
+            <li>如果要收口 Factory 注册，扩展点应该是什么？（答：<code>AgentFactoryRegistry</code>——让 CLI 使用 Orchestrator 默认 Registry，而非复制组合逻辑。）</li>
+            <li>偿还债务时如何避免破坏现有行为？（答：以公开入口和测试表达的现有行为为准，先补/依赖测试再重构，保持覆盖率门槛。）</li>
+          </ul>`
+      },
+      {
+        id: "q19",
+        cat: "Skills / MCP",
+        diff: 2,
+        tags: ["skill", "SKILL.md", "discovery", "shadow", "snapshot"],
+        q: "Yiku Skill 是什么？请讲讲它的目录优先级、发现流程，以及为什么 Project Skill 只能作为 untrusted Reference。",
+        idea: `
+          <p>先定义 Skill = 带 Frontmatter 的 <code>SKILL.md</code>（可发现、可快照、可按需加载）。再讲三级目录优先级（project > user > builtin）和 Shadow 机制，最后从「信任分级」角度解释 Project Skill 为何不可信。</p>`,
+        exp: `
+          <p>Skill 向 Agent 提供操作说明，<b>描述能力但不启动 Session、不提权</b>。三级目录：</p>
+          <pre><code>@yiku/agent-orchestrator/src/skills/builtin/&lt;name&gt;/SKILL.md
+~/.yiku/skills/&lt;name&gt;/SKILL.md
+&lt;workspace&gt;/.yiku/skills/&lt;name&gt;/SKILL.md</code></pre>
+          <p>同名按 <code>project &gt; user &gt; builtin</code> 生效，低优先级项保留为 <code>SKILL_SHADOWED</code> 诊断；同源重名则该名在该源无效。</p>
+          <h4>Discovery 流程</h4>
+          <ol>
+            <li>并行读取三个目录；② 只接受目录/符号链接下的 <code>SKILL.md</code>；③ 用 Real Path 拒绝逃逸 Skill 根；④ 解析 Frontmatter + 正文；⑤ 计算规范化 SHA-256 Digest；⑥ 处理同名优先级；⑦ 返回有效/Shadowed/Diagnostics。</li>
+          </ol>
+          <p>单个无效文件不阻止其他 Skill 加载（fail-soft）。</p>`,
+        ans: `
+          <p><b>Skill 定位</b>：一个可发现、可快照、可按需加载的「操作说明包」，Frontmatter 声明 <code>name/description/agentTypes/mcp</code> 等；<code>name</code> 必须与父目录名一致。</p>
+          <p><b>三种激活方式</b>：① <b>自动匹配</b>——主 Agent 常驻名称+描述，匹配时用 <code>skillInspectTool</code> 按需加载正文（不相关指令不进上下文）；② <b>Slash Command</b>（<code>/dependency-audit ...</code>），最多串 6 个，提交前按当前 Agent Type 生成 Snapshot 校验；③ <b>隔离 Worker</b>（<code>skillRunTool</code>），独立只读 Agent ID + Capability Scope + Reader 并发预算。</p>
+          <p><b>为什么 Project Skill 只能 untrusted</b>（关键）：Builtin 和用户显式安装的 User Skill 可以提供 Agent Instructions，但 <b>Workspace 里的 Project Skill 只进入 <code>untrusted</code> Reference Channel</b>——不能覆盖系统指令、不能扩大 Tool Scope、不能绕过权限。因为项目内容（含 <code>.yiku/skills/</code>）可能被任意提交者写入，若让它进 System Instructions 就等于给了仓库内容一条提权/注入通道。这与「Memory 召回、Hook Context、Tool 输出都是 untrusted」是同一条信任分级原则。</p>
+          <p><b>Snapshot 边界</b>：运行中 Session Profile 持有<b>完整 Snapshot</b>；持久化 Agent Profile 目前只把 Skill <b>名称</b>写入 Markdown，重启时从当前 Catalog 重建——所以 Skill 被改/删/Shadow 后持久 Profile 可能变语义或加载失败。需要冻结长期语义的宿主应自行持久化完整 Snapshot。</p>`,
+        follow: `
+          <ul>
+            <li>Skill 的 <code>mcp</code> Frontmatter 能创建连接或扩权吗？（答：不能，只能缩小。每个 Target 必须同时满足 Server 已注册、allowlist 允许、Managed Policy 未禁、Snapshot 声明、当前 Agent Capability 允许。）</li>
+            <li><code>allowed-tools</code> 字段授予权限吗？（答：不。它只是 Agent Skills 兼容元数据，不授权。）</li>
+          </ul>`
+      },
+      {
+        id: "q20",
+        cat: "Skills / MCP",
+        diff: 3,
+        tags: ["mcp", "elicitation", "ssrf", "allowlist"],
+        q: "Yiku 集成 MCP 时如何做安全约束？外部副作用（如 http Hook / MCP 调用）在网络层有哪些防护？",
+        idea: `
+          <p>两条线：MCP Target 必须穿过「五重 allowlist 交集」；网络侧讲 HTTPS-only + DNS 后拒私网（防 SSRF）+ 每跳重校验 + Header 只引显式 env。</p>`,
+        exp: `
+          <p>MCP（Model Context Protocol）Server 支持 <code>stdio</code> 或 <code>streamable-http</code> transport。MCP 副作用使用 <code>mcp-external-side-effect</code> Policy，可由 Permission Profile 的 <code>mcpRules</code> 按 <code>server/tool</code> 匹配。</p>
+          <h4>五重交集</h4>
+          <p>一个 MCP Target 要可用必须同时满足：① Server 已在 Runtime 配置注册；② Server Tool allowlist 允许；③ Managed Policy 未禁止；④ Skill Snapshot 声明允许；⑤ 当前 Agent Capability 允许。</p>`,
+        ans: `
+          <p><b>MCP 能力约束是「多重 allowlist 求交」</b>：Skill/Agent 配置只能<b>缩小</b>能力，任何一层不允许即不可调用。MCP 也不能绕过 Elicitation、Hook、Permission 和 Trust。</p>
+          <p><b>网络层防护</b>（主要针对 <code>http</code> Executor 与外部投递，是防 SSRF 的关键）：</p>
+          <ul>
+            <li><b>仅 HTTPS</b>，URL 不允许嵌入凭据；</li>
+            <li><b>DNS 解析后拒绝私网/回环/受限地址</b>——这是防 SSRF 的核心（防止解析到内网）；</li>
+            <li><b>Redirect 每一跳重新校验</b>（防止用重定向绕过首跳检查）；</li>
+            <li>Header 只能引用显式 <code>allowedEnvVars</code>（防止把任意环境变量泄漏出去）；</li>
+            <li>响应体有<b>字节上限</b>；</li>
+            <li>Studio Sink 只接受<b>回环地址</b>。</li>
+          </ul>
+          <p><b>Elicitation</b>：MCP Server 反向向用户征询信息时，由宿主提供的 Handler 处理（CLI 承载的五类阻塞交互之一），Orchestrator 不直接渲染 UI。</p>
+          <p><b>审计</b>：MCP 调用与 Hook 一样发出脱敏操作事件，只记 Target/状态/时长/摘要，不含 Secret 或完整不可信输出。</p>`,
+        follow: `
+          <ul>
+            <li>MCP Server 怎么在 config 里声明？（答：<code>mcp.servers.&lt;name&gt;</code>，<code>transport: stdio</code> + <code>command/args</code>，或 <code>streamable-http</code>。）</li>
+            <li>Skill 里 <code>mcp: [github/*]</code> 就能用 github 工具吗？（答：不够，还要 Server 已注册 + allowlist + Managed Policy + Agent Capability 同时通过。）</li>
+          </ul>`
+      },
+      {
+        id: "q21",
+        cat: "Tasks / 会话状态",
+        diff: 2,
+        tags: ["todo", "task-registry", "todo-adapter", "persist"],
+        q: "todoWriteTool 的 TODO 和持久 Task 是什么关系？为什么 TODO 要求「同一列表最多一个 in_progress」？",
+        idea: `
+          <p>区分「模型侧的 TODO 工具」和「Orchestrator 侧的持久 Task Store」，中间靠 TodoAdapter 映射。single-in_progress 讲的是「专注单任务」的执行纪律。</p>`,
+        exp: `
+          <p><code>todoWriteTool</code> 每次<b>替换完整列表</b>，状态为 <code>pending</code>、<code>in_progress</code>、<code>completed</code>，同一列表<b>最多一个 <code>in_progress</code></b>。Orchestrator 通过 <code>TodoAdapter</code> 把 TODO 映射到持久 Task Store。</p>
+          <p>Delegate/Subagent 侧还有 <code>TaskRegistry</code> 管理任务状态（create/resolve/complete），A2A 消息用 <code>taskId</code> 关联父子。</p>`,
+        ans: `
+          <p><b>两层关系</b>：<code>todoWriteTool</code> 是 <b>Agent 面向模型的轻量清单工具</b>（替换式写入，属状态写入非文件写入）；<code>TaskRegistry</code> + 持久 Task Store 是 <b>Runtime 侧的任务事实</b>，可随 Session 恢复、可被 Subagent/Delegate 共享。<code>TodoAdapter</code> 在两者之间投影，让模型的 TODO 能落到持久 Task，并在 CLI <code>/tasks</code> 里查看。</p>
+          <p><b>为什么最多一个 in_progress</b>：这是执行纪律——强制 Agent <b>一次只专注一个任务</b>，避免它把一堆任务同时标成进行中却无实质推进。它让「无进展」可被检测（配合 <code>maxNoProgressStages</code>），也让时间线/观测能清晰反映当前焦点。替换式写入则保证列表始终是一份完整、自洽的快照，而不是增量拼接出的不一致状态。</p>
+          <p><b>生命周期事件</b>：Task 相关 Hook 有 <code>TaskCreated</code>/<code>TaskCompleted</code>，Atomic Flow 有 <code>task.snapshot</code>；这些让任务变化可审计、可 replay。</p>`,
+        follow: `
+          <ul>
+            <li>Session State 里持久化了哪些和 Task 相关的东西？（答：Task、Subagent Profile/Instance、已完成与进行中的操作摘要等。）</li>
+            <li>父任务取消时子任务怎么办？（答：AbortSignal 向关联子运行传播；但已进入 Reader/Writer 等待队列的调用要取得执行权后才由子运行观察取消。）</li>
+          </ul>`
+      },
+      {
+        id: "q22",
+        cat: "Tasks / 会话状态",
+        diff: 3,
+        tags: ["session-state", "lease", "checkpoint", "resume", "pending-question"],
+        q: "跨进程恢复一个未完成 Session 时，Yiku 保存和重建了哪些状态？为什么等待中的用户问题不能盲目自动重放？",
+        idea: `
+          <p>列 Session State 的存储项，讲 Lease 防并发，讲「稳定 Stage 边界恢复 + Pending Question 保守重建」。核心是 permission/secret 类问题必须 needs-review。</p>`,
+        exp: `
+          <p>Session State（当前 v5）保存：History 与 Context 摘要、Stage/预算/Continuation 摘要、Task/Subagent Profile 与 Instance、已完成/进行中操作摘要、Pending Question/Continuation Strategy/Side-effect Review、Checkpoint 与 Workspace Snapshot 引用、Eval 与工作记忆状态。</p>
+          <p>写入用 Session Store + <b>Lease</b> 防止并发进程同时拥有同一 Session。</p>`,
+        ans: `
+          <p><b>恢复的核心原则：只从已持久化的稳定 Stage 边界开始，不序列化 SDK 内部 <code>RunState</code></b>。</p>
+          <ul>
+            <li><code>--continue</code> 恢复当前 Workspace 最新未完成 Session，<code>--resume &lt;id&gt;</code> 按 ID 恢复（两者互斥）。</li>
+            <li>Lease 保证同一时刻只有一个进程持有该 Session，避免双写。</li>
+            <li>Workspace Checkpoint 恢复会覆盖快照范围内文件，所以 <code>/rewind</code> 前必须在 Picker 里再次确认。</li>
+          </ul>
+          <p><b>为什么 Pending Question 不能盲目重放</b>：等待期间只持久化「问题请求」而<b>不保存答案</b>。恢复时：</p>
+          <ul>
+            <li>普通问题 → 用<b>明确标记的 reconstructed continuation</b> 继续；</li>
+            <li><code>permission</code>、<code>secret</code> 或无法安全重建的问题 → 保持 <code>needs-review</code>（对应 CLI 的 <code>CLI_REVIEW_REQUIRED</code>）。</li>
+          </ul>
+          <p>原因是：外部副作用无 exactly-once 保证，权限/密钥类决策若被自动重放，可能在用户不知情下再次授权高风险操作。保守重建（宁可要人工复核）是安全正确的选择。未知外部副作用同样要求恢复复核。</p>`,
+        follow: `
+          <ul>
+            <li>如果 Persistent Runtime 在资源登记完成前失败会怎样？（答：当前进程可能持有 Lease 直到 Session 显式关闭或进程退出——这是已记录的限制。）</li>
+            <li>取消/切换后迟到的 Progress/Usage Event 如何处理？（答：按 Run ID 丢弃，不污染下一轮 Context。）</li>
+          </ul>`
+      },
+      {
+        id: "q23",
+        cat: "权限与安全",
+        diff: 2,
+        tags: ["hooks", "30-events", "trust", "executor", "command-protocol"],
+        q: "Yiku 的 Hook 协议有多少事件、几类 Executor？Command Hook 的 stdin/stdout/退出码协议是怎样的？Trust 如何工作？",
+        idea: `
+          <p>数字要准：30 个事件、Runtime 接入 28 个、6 类 Executor。Command 协议讲「stdin 读一个事件 JSON → stdout 经 Schema 校验 → 退出码 0/2/其他」。Trust 讲 Hash 绑定、配置变则失效。</p>`,
+        exp: `
+          <p>Hook 协议当前 <b>30 个事件</b>（SessionStart、UserPromptSubmit、PreToolUse、PermissionRequest、PostToolUse、SubagentStart/Stop、TaskCreated/Completed、PreCompact/PostCompact、SessionEnd、Elicitation… 等），Yiku Runtime 接入其中 <b>28 个</b>；<code>WorktreeCreate</code>/<code>WorktreeRemove</code> 返回 <code>HOOK_CAPABILITY_UNAVAILABLE</code>，不静默跳过。</p>
+          <h4>六类 Executor</h4>
+          <p><code>callback</code>（宿主函数）、<code>command</code>（子进程）、<code>http</code>（HTTPS）、<code>prompt</code>（HookModelRunner）、<code>agent</code>（HookAgentRunner）、<code>mcp</code>（HookMcpInvoker）。全部有资源上限和取消传播。</p>`,
+        ans: `
+          <p><b>Command Hook 协议</b>：</p>
+          <ul>
+            <li><b>输入</b>：从 stdin 读<b>一个</b>事件 JSON，随后 stdin 关闭；</li>
+            <li><b>输出</b>：stdout 可空、纯文本或兼容 JSON（如 <code>hookSpecificOutput.permissionDecision: "deny"</code>）；</li>
+            <li><b>退出码</b>：<code>0</code>=成功；<code>2</code>=按 Event Capability 映射为阻断/反馈/忽略；其他=<code>HOOK_EXECUTION_FAILED</code>；</li>
+            <li><b>关键</b>：stdout 仍需过事件专属 Schema，<b>退出码不能让非法输出生效</b>。</li>
+          </ul>
+          <p><b>Decision 合并</b>：Handler 产生 <code>allow/block/defer/no-op/stop</code> 及 <code>allow|ask|deny</code> 权限建议；<code>HookDecisionPolicy</code> 合并多结果、拒绝冲突或非法升级；<b>Hook 的 allow 不能覆盖 Runtime/Workspace/Managed 的 deny</b>。同一事件的多个来源 Handler <b>都参与</b>决策（不互相覆盖）。</p>
+          <p><b>Trust</b>：Project/Local/Skill/Agent/User 来源的外部副作用 Handler 默认<b>需显式信任</b>。Trust Key 绑定 Source + Hook/Handler Hash + Executor 类型 + Command/Origin/MCP Target + 环境变量与能力摘要。<b>配置一变 Hash 就变，旧信任失效</b>——防止「先信任一个无害 Hook，再偷偷改成恶意命令」。Trust 只批准配置的 Handler，不代表批准 Agent 当前发起的具体命令。CLI 用 <code>/hooks list|inspect|trust|revoke</code> 管理。</p>`,
+        follow: `
+          <ul>
+            <li>Hook 配置来源冲突时如何解决？（答：按稳定优先级编译成不可变 Snapshot，但不同来源不互相覆盖，所有匹配 Handler 都参与；Reloader 只在完整新配置编译成功后才替换 Snapshot，避免半更新。）</li>
+            <li>Condition 能执行任意 JS 吗？（答：不能，只读允许的结构化字段。）</li>
+          </ul>`
+      },
+      {
+        id: "q24",
+        cat: "Runtime 与编排",
+        diff: 2,
+        tags: ["capability-scope", "交集", "skill-assembly", "工具收敛"],
+        q: "CapabilityScope 是如何决定一个 Agent 能看到哪些工具的？请描述通用 Skill 的装配链路。",
+        idea: `
+          <p>核心一句：能力 = 多方声明的<b>交集</b>，项目内容不能自行提权。再画出 SKILL.md 从发现到进入 Factory 的链路。</p>`,
+        exp: `
+          <p><code>CapabilityScope</code> 按 Agent 配置装配：Code Toolset、Task/TODO Adapter、Delegate、Agent 管理、Skill Runtime、MCP Tool、User Question、Permission Handler。</p>
+          <p>能力取<b>交集</b>：Agent 声明 ∩ Skill Snapshot ∩ MCP allowlist ∩ Workspace Access ∩ Managed Policy。</p>`,
+        ans: `
+          <p><b>决定可见工具的是「交集原则」</b>：一个工具要对某 Agent 可见，必须同时被 Agent 声明、Skill Snapshot、MCP allowlist、Workspace Access 和 Managed Policy 允许。<b>项目内容不能通过配置自行提升宿主权限</b>——这是防止仓库内容越权的根本机制。</p>
+          <p><b>通用 Skill 装配链路</b>（持久 CLI Session）：</p>
+          <pre><code>builtin / ~/.yiku / &lt;workspace&gt;/.yiku
+  -&gt; discoverSkills()
+  -&gt; SkillRuntime Catalog
+  -&gt; createSkillRuntimeSkill(agentType)
+  -&gt; CapabilityScope 的 "skills"
+  -&gt; AgentFactoryInput.tools
+  -&gt; CodeAgentFactory / ResearchAgentFactory</code></pre>
+          <p>Catalog 只常驻名称/描述/兼容 Agent Type；<code>skillInspectTool</code> 按需返回正文，<code>skillRunTool</code> 先按当前 Agent Type + MCP Policy 生成 Snapshot，再在独立只读 <code>runAgentSessionTurn()</code> 执行。</p>
+          <p><b>Factory 的责任</b>：<code>AgentFactoryInput.tools</code> 是 Orchestrator 已按 Scope <b>收敛后</b>的宿主工具契约，Factory 必须保留它们并与自己的领域工具组合，组合后 Tool Name 必须唯一。Code Agent 未声明 <code>skills</code> 时默认得 <code>agents+code+skills+tasks</code>；其他 Agent 默认只得通用 Skill Catalog。</p>
+          <p><b>不传播</b>：调用方传入的 <code>agentType</code>/<code>modelKey</code>/临时激活 Skill 只覆盖<b>根节点</b>，不传播到 Handoff——Handoff 目标用自己的配置。</p>`,
+        follow: `
+          <ul>
+            <li>为什么 Research 默认拿不到 Code Workspace 工具？（答：只有宿主在 Agent 配置显式声明并通过 Permission/Workspace Access/Managed Policy 后额外工具才进 Scope。）</li>
+            <li>Slash Command 激活发现式 Skill 会跳过校验吗？（答：不会，先做同样的 Agent Type 与 Capability 校验。）</li>
+          </ul>`
+      },
+      {
+        id: "q25",
+        cat: "Atomic Flow / 可观测性",
+        diff: 3,
+        tags: ["edge", "parent", "iteration", "instance", "phase"],
+        q: "Atomic Flow 里 Instance、Parent、Edge、iteration 分别表达什么？为什么说「Parent 表达层级、Edge 表达流程关系，两者不能互相替代」？",
+        idea: `
+          <p>逐个说清四个概念的语义，重点回答那句不变量：层级（谁包含谁）和流程（谁流向谁）是正交的两个维度。</p>`,
+        exp: `
+          <p><b>Instance</b>：<code>{ id, iteration?, parentId? }</code>，标识一次具体执行。<b>iteration</b> 表达重复循环，<b>parentId</b> 表达层级。</p>
+          <p><b>Edge</b> 类型：<code>execution</code>、<code>data</code>、<code>feedback</code>、<code>persistence</code>，至少引用 Source/Target Atom Key，可选 <code>fromInstanceId</code> 精确关联来源执行。</p>
+          <p><b>Phase</b>：<code>scheduled → start → delta* → end</code>，或 <code>→ error</code>，或 <code>scheduled → skipped</code>。</p>`,
+        ans: `
+          <p><b>四个概念</b>：Instance 是「一次执行」的身份；iteration 表达「同一 Atom 在一个 Run 里重复执行第几次」（如 loop turn）；parentId 表达「嵌套层级」（子在父之内）；Edge 表达「流程关系」（一个执行流向另一个）。</p>
+          <p><b>为什么层级与流程不能互替</b>（这是核心）：</p>
+          <ul>
+            <li><b>Parent（层级）</b>回答的是「A 是不是在 B 的执行范围<b>内部</b>发生的」——比如某个 Tool 调用发生在某个 Loop Turn 内部。它是<b>包含</b>关系。</li>
+            <li><b>Edge（流程）</b>回答的是「A 的结果<b>流向</b>了 B」或「B <b>依赖</b> A 的数据/反馈」——比如 model 的输出作为 data edge 流入 tool。它是<b>关系/依赖</b>。</li>
+            <li>二者正交：两个 Atom 可以是兄弟（同一父）却有 data edge；也可以有父子层级却无直接 edge。若用 Parent 硬编流程，就丢了「同层之间的数据依赖」；若用 Edge 硬编层级，就丢了「嵌套作用域」。所以必须分开表达。</li>
+          </ul>
+          <p><b>确定性保证</b>：Sequence 在单 Run 内严格递增，<code>foldAtomicEvents</code> 按 sequence 重建 instances/edges，<b>相同规范事件前缀产生相同 Fold State</b>；跨系统关联用 ID 不用墙上时钟。</p>`,
+        follow: `
+          <ul>
+            <li>生产者一定要先发 <code>scheduled</code> 吗？（答：不一定，Span 通常从 <code>start</code> 开始，以 <code>end</code>/<code>error</code> 结束。）</li>
+            <li>为什么 end 不能重新生成 Instance ID？（答：终态必须发在同一实例上，否则 fold 无法把开始与结束配对。）</li>
+          </ul>`
+      },
+      {
+        id: "q26",
+        cat: "Memory 记忆",
+        diff: 2,
+        tags: ["working-memory", "consolidate", "session-state", "500"],
+        q: "Working Memory 和长期 Memory 有什么区别？它的状态如何流转、如何固化为长期记忆？",
+        idea: `
+          <p>强调 Working 是「当前任务短期状态、不自动跨 Session 晋升」，长期是 SQLite 持久。画出 capture → active → consolidated 状态机，讲 CLI 用 SessionWorkingMemoryStore 随 Session 恢复、每 Session ≤500 条。</p>`,
+        exp: `
+          <p>Working Memory 保存当前任务短期信息，与长期 Memory 分开：不自动跨 Session 晋升；可从 Prompt/Tool/Agent 输出捕获；进入上下文有独立字符预算；完成/取消时由 Runtime 决定保留或清理。</p>
+          <p>独立用 <code>MemoryLifecycle</code> 时默认 Working Store 只在进程内存；CLI 用 <code>SessionWorkingMemoryStore</code> 写入版本化 Session State，可随 Session 恢复，每 Session <b>最多 500 条</b>。</p>`,
+        ans: `
+          <p><b>区别</b>：Working Memory 是<b>当前 Session 的短期工作台</b>（草稿、当前 Prompt/Task/操作/用户回答），长期 Memory 是<b>跨 Session 的持久知识</b>（SQLite + FTS5）。Working <b>不自动跨 Session 晋升</b>。</p>
+          <p><b>状态流转</b>：</p>
+          <pre><code>capture -&gt; active
+active + valid draft -&gt; consolidated -&gt; longTermMemoryId
+active + below threshold -&gt; discarded
+active + write failure -&gt; active（在 result.pending 报告）
+forget working record -&gt; 从 Working Store 物理移除</code></pre>
+          <p>Capture 以 <code>source + normalizedContent</code> 在当前 Session 内去重。</p>
+          <p><b>固化（consolidate）</b>：用<b>稳定 Idempotency Key</b> 把 Working Draft 写入长期 Store，重复内容由 Store 合并并保留 Revision 语义。CLI 命令 <code>/memory consolidate</code>。</p>
+          <p><b>统一搜索</b>默认同时查 Working + Scenario + Procedure + Semantic：Working 结果优先，再按分数合并，Fingerprint 去重 + 字符预算截断。</p>`,
+        follow: `
+          <ul>
+            <li>什么时候会自动提取长期记忆？（答：启用工业 Eval 时只有 <code>accepted</code>；未启用时成功且过 Validator 的输出先提取再跑兼容 Eval。<code>degraded</code> 不自动晋升。）</li>
+            <li>Working Memory 会随 <code>/rewind</code> 或恢复丢失吗？（答：CLI 版写入版本化 Session State，可随 Session 恢复。）</li>
+          </ul>`
+      },
+      {
+        id: "q27",
+        cat: "Memory 记忆",
+        diff: 3,
+        tags: ["sqlite", "fts5", "wal", "schema-migration", "rrf"],
+        q: "SqliteMemoryStore 在存储层做了哪些保证？混合检索（词法+向量）的排序流程是怎样的？",
+        idea: `
+          <p>存储层讲 WAL/事务/FTS 同步/Revision 冲突/迁移拒绝降级；检索讲 FTS5 → 向量 → RRF 融合 → 重排 → 去重多样性 → 预算 → 渲染。</p>`,
+        exp: `
+          <p><code>SqliteMemoryStore</code>：WAL、Schema 版本与迁移、FTS5、可选向量 BLOB、事务写入、Revision 冲突、TTL/软删除/硬删除/清理。需 Node <code>&gt;=22.13.0</code>（用 <code>node:sqlite</code>）。</p>
+          <p>初始化：<code>foreign_keys=ON</code>、<code>journal_mode=WAL</code>、<code>synchronous=NORMAL</code>、<code>temp_store=MEMORY</code>、默认 5s Busy Timeout。迁移在 <code>BEGIN IMMEDIATE</code> 事务内执行；<b>磁盘 Schema 高于 Runtime 支持版本时拒绝打开</b>。</p>`,
+        ans: `
+          <p><b>存储层保证</b>：</p>
+          <ul>
+            <li><b>一致性</b>：写入/更新/软删/硬删/Prune 都在事务内<b>同步维护 FTS</b>——软删除把 <code>status</code> 设 <code>deleted</code> 并从 FTS 移除，硬删除直接移除主记录+FTS 行。</li>
+            <li><b>去重约束</b>：唯一约束 = Namespace + Scope Key + Kind + Fingerprint；幂等键有部分唯一索引。</li>
+            <li><b>并发</b>：更新要 <code>expectedRevision</code>，不匹配返回 <code>MEMORY_REVISION_CONFLICT</code>。</li>
+            <li><b>安全降级取向</b>：磁盘 Schema 比 Runtime 新则<b>拒绝打开、不重建用户数据</b>；损坏返回 <code>EVAL_STORE_CORRUPT</code>/类型化错误而非静默。新库文件尽力设 <code>0600</code>。</li>
+          </ul>
+          <p><b>混合检索排序</b>（注入 EmbeddingProvider 后）：</p>
+          <ol>
+            <li>各通道产生 Candidate（FTS5 词法 + 向量）；</li>
+            <li><b>Reciprocal Rank Fusion（RRF）</b>合并排名；</li>
+            <li><code>DefaultMemoryReranker</code> 结合相关性/质量/时效/重要性重排；</li>
+            <li>去重并保持 Kind/来源多样性；</li>
+            <li>按字符预算生成结果；</li>
+            <li><code>renderMemoryContext()</code> 输出安全、带边界的 Agent Instructions。</li>
+          </ol>
+          <p>召回结果<b>带分数分解和选择原因</b>，便于审计。无 Embedding 时退回纯 FTS5。</p>`,
+        follow: `
+          <ul>
+            <li>Vector Candidate 超过 <code>maxVectorScan</code> 会怎样？（答：跳过向量通道用词法结果，事件带 <code>MEMORY_VECTOR_SCAN_LIMIT</code>。）</li>
+            <li>Memory 事件会泄漏正文吗？（答：不会，只含 Namespace Hash、操作、阶段、耗时、计数、模式、错误码。）</li>
+          </ul>`
+      },
+      {
+        id: "q28",
+        cat: "工程实践",
+        diff: 2,
+        tags: ["cli-exit-codes", "ndjson", "non-interactive", "fail-closed"],
+        q: "非交互模式（CI）下运行 yiku，退出码体系是怎样的？为什么它要「统一 fail-closed」，没有通用 --yes？",
+        idea: `
+          <p>背出关键退出码（0/2/3/4/5/6/7/8/9），再讲 fail-closed 的四条：Workspace Trust 只定读写、无 --yes、缺 questionKey 暂停、能力必须 Managed Policy 精确授权。</p>`,
+        exp: `
+          <p>非交互模式无 TTY 或显式选机器协议（<code>--output json|ndjson</code>）。Workspace 必须已在交互模式授权，否则直接退出。</p>
+          <p>NDJSON 流式输出 <code>session.started</code>、Stage、消息、Tool、Question、Checkpoint、Verification，最后以唯一 <code>session.completed</code>/<code>session.failed</code> 结束。</p>`,
+        ans: `
+          <p><b>退出码体系</b>：</p>
+          <ul>
+            <li><code>0</code> 成功 · <code>1</code> 未分类运行/基础设施失败 · <code>2</code> 参数/答案/Policy 无效 · <code>3</code> Workspace 未授权 · <code>4</code> Runtime/Hook/Policy 拒绝 · <code>5</code> 需用户输入/审批 · <code>6</code> Eval/未知副作用需复核 · <code>7</code> 预算暂停可恢复 · <code>8</code> Eval <code>rejected</code> · <code>9</code> Provider/MCP 外部依赖失败。</li>
+          </ul>
+          <p>这套<b>细分退出码</b>让 CI 能精确区分「代码问题（8）/需人工（5、6）/环境问题（9）/可续跑（7）」，而不是笼统的 0/1。</p>
+          <p><b>为什么 fail-closed、无 --yes</b>（安全设计）：无人值守环境里，一个宽松的「全部同意」等于把所有高风险操作的闸门永久打开。所以：</p>
+          <ul>
+            <li>Workspace Trust 只决定 <code>read-only</code>/<code>read-write</code>，<b>不批准具体副作用</b>；</li>
+            <li><b>不提供通用 <code>--yes</code></b>；</li>
+            <li>缺稳定 <code>questionKey</code> 的问题<b>暂停</b>而非自动选第一项；</li>
+            <li><code>permission</code>/<code>secret</code> 永不通过答案文件自动回答；</li>
+            <li>写入/进程/网络/MCP/凭据/发布能力只能由 <b>Managed Policy 精确授权</b>（Resource 不支持通配），且成功授权必须写 <code>~/.yiku/audit/cli-policy.ndjson</code>，Audit 写失败则不执行高风险操作。</li>
+          </ul>
+          <p>本质：把「授权」这件事从「一个开关」拆成「每种能力单独、可审计、精确到 Resource 的 Grant」，让自动化既能跑又不失控。</p>`,
+        follow: `
+          <ul>
+            <li>Managed Policy 能把只读 Workspace 升成可写吗？（答：不能。无人值守写操作要同时具备 read-write Trust 和对应 Grant。）</li>
+            <li>答案文件对 <code>preference</code> 类问题能自动答吗？（答：只有代码侧可信 Manifest 与问题都允许、且推荐 optionId 一致时才行；模型请求本身不能建立可信 Manifest。）</li>
+          </ul>`
+      },
+      {
+        id: "q29",
+        cat: "Subagents / A2A",
+        diff: 3,
+        tags: ["worktree", "write-lock", "concurrency", "reader-limit"],
+        q: "多个子 Agent 并发修改同一仓库时，Yiku 靠什么避免互相踩踏？共享读写、Worktree、只读三种模式的并发语义分别是什么？",
+        idea: `
+          <p>三条隔离手段：只读并发受 maxParallelReaders 限、共享写用单写锁串行、Worktree 文件系统隔离。强调「并行不解决逻辑依赖」。</p>`,
+        exp: `
+          <p><code>TeamRuntime</code> 管理多 Worker，<code>TaskRegistry</code> 管任务状态。三种 Delegate 访问模式：只读、共享读写、Worktree。</p>`,
+        ans: `
+          <p><b>三种模式的并发语义</b>：</p>
+          <ul>
+            <li><b>只读</b>：多个 Reader <b>可并行</b>，数量受 <code>maxParallelReaders</code> / Runtime 预算限制；只读子 Agent 若报告文件变更则整个调用失败。</li>
+            <li><b>共享读写</b>：与父同一 Workspace，写操作通过 <b><code>WorkspaceWriteLock</code> 单写锁串行化</b>；但<b>不保证不同 Agent 的语义修改无冲突</b>，适合明确划分文件范围的短任务。</li>
+            <li><b>Worktree</b>：在<b>独立 Git Worktree</b> 中执行，文件系统隔离，返回变更摘要和 Patch，<b>父 Agent 决定是否应用</b>；但仍共享模型/网络/外部服务预算。</li>
+          </ul>
+          <p><b>取消语义的坑</b>：父任务取消向子运行传播 AbortSignal，但<b>已进入 Reader/Writer 等待队列的调用本身不可取消</b>——排队任务取得执行权后，子运行必须再次观察同一 Signal。</p>
+          <p><b>失败回退</b>：只读任务不能请求 Worktree；读写任务在配了 Worktree Manager 且未显式选 <code>shared</code> 时优先建 Worktree，自动 Worktree 不可用可回退共享写入，但<b>显式 <code>worktree</code> 失败则不回退</b>。</p>
+          <p><b>关键认知</b>：并行不会自动解决逻辑依赖。父 Agent 必须为子任务提供明确 Scope、输入、完成条件和输出格式；子任务输出必须在聚合前完成自身 Validator。</p>`,
+        follow: `
+          <ul>
+            <li>Worktree 有哪些风险？（答：未提交变更、子模块、外部生成文件、大仓库会增加 Patch 与清理风险；需有效 Git 仓库和可创建临时路径。）</li>
+            <li>子 Agent 的 Workspace Scope 能比父大吗？（答：不能，只能缩小父范围。）</li>
+          </ul>`
+      },
+      {
+        id: "q30",
+        cat: "工程实践",
+        diff: 2,
+        tags: ["code-tools", "editTool", "原子写入", "workspace-boundary"],
+        q: "Code Agent 的 editTool/writeTool 如何保证文件写入安全？为什么用「临时文件 + 原子 Rename」，它能提供事务吗？",
+        idea: `
+          <p>讲 editTool 唯一匹配要求、五步原子写入流程、Workspace 边界的 Real Path 检查。诚实点出「不提供跨文件事务」。</p>`,
+        exp: `
+          <p><code>editTool</code> 要求目标文本<b>存在且匹配唯一</b>（零匹配或多匹配都失败）；<code>writeTool</code> 按操作显式创建或覆盖，不把意外存在的目标当新文件。文件读取有字符/行数/匹配数上限，二进制/设备/过大/非法 UTF-8 返回结构化错误。</p>`,
+        ans: `
+          <p><b>原子写入五步</b>（修改已有文件）：</p>
+          <ol>
+            <li>读取并记录目标身份；② 同目录创建临时文件；③ 写入并 File Sync；④ <b>再次校验目标身份</b>；⑤ Rename 原子替换。</li>
+          </ol>
+          <p><b>为什么这样做</b>：临时文件 + 原子 Rename 能降低<b>部分写入</b>（写一半崩溃留下损坏文件）和<b>常规链接竞态</b>（TOCTOU）的风险；写入前后两次校验目标身份可发现符号链接被替换等攻击。</p>
+          <p><b>诚实的边界</b>：它<b>不能提供跨多个文件的事务</b>——只是单文件级别的原子替换。多 Agent 共享写入的协调靠 Orchestrator 的 <code>WorkspaceWriteLock</code>，不是靠这个机制。</p>
+          <p><b>Workspace 边界</b>：所有相对路径从 Workspace 根解析；默认只允许 Workspace，CLI 只额外注入 <code>~/.yiku</code>（不开放整个 Home）；绝对路径和 <code>~/...</code> 展开后必须在允许边界；用 <b>Real Path 检查符号链接逃逸</b>；不依赖进程全局 <code>cwd</code>，不允许 <code>..</code>/链接替换/命令内 <code>cd</code> 逃离授权根。删除/移动/改权限等高风险操作即使在授权根内仍按 Permission Profile 审批。</p>
+          <p><b>统一 Middleware</b>：所有工具走「校验输入 → 解析 Tool Effect → 检查 Workspace Access 和 Permission → 触发 Tool Hook → 执行 → 规范化 CodeToolResult → 生成 Trace/展示」，结果区分模型可见文本与宿主展示数据。</p>`,
+        follow: `
+          <ul>
+            <li>为什么 editTool 要求唯一匹配？（答：避免歧义替换改错位置；零/多匹配都失败是 fail-safe。）</li>
+            <li>Tool 输出会直接进模型上下文吗？（答：会被包装成带 Tool Name 的 untrusted Reference，指令不能覆盖 Agent Instructions 或扩边界。）</li>
+          </ul>`
+      },
+      ];
+    </script>
+    <script id="app-script">
+      // ====================================================================
+      // 应用层：状态、研习模式渲染、筛选、模拟面试引擎、评分与报告
+      // 纯原生 JS，无外部依赖；进度存 localStorage（自包含）。
+      // ====================================================================
+      "use strict";
+      const LS_KEY = "yiku-interview-progress-v1";
+      const $ = (sel, root = document) => root.querySelector(sel);
+      const el = (tag, props = {}, children = []) => {
+        const node = document.createElement(tag);
+        for (const [k, v] of Object.entries(props)) {
+          if (k === "class") node.className = v;
+          else if (k === "html") node.innerHTML = v;
+          else if (k === "text") node.textContent = v;
+          else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2), v);
+          else if (v !== null && v !== undefined) node.setAttribute(k, v);
+        }
+        (Array.isArray(children) ? children : [children]).forEach((c) => {
+          if (c === null || c === undefined) return;
+          node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+        });
+        return node;
+      };
+
+      const state = {
+        mode: "study",
+        activeId: QUESTIONS[0].id,
+        catFilter: new Set(),
+        diffFilter: new Set(),
+        search: "",
+        done: new Set(),        // 研习标记「已掌握」
+        mock: null,             // 模拟面试运行时
+      };
+
+      // ---- 持久化 ----
+      function loadProgress() {
+        try {
+          const raw = localStorage.getItem(LS_KEY);
+          if (raw) {
+            const data = JSON.parse(raw);
+            (data.done || []).forEach((id) => {
+              state.done.add(id);
+            });
+          }
+        } catch (_) {}
+      }
+      function saveProgress() {
+        try {
+          localStorage.setItem(LS_KEY, JSON.stringify({ done: [...state.done] }));
+        } catch (_) {}
+      }
+
+      // ---- 过滤 ----
+      function filteredQuestions() {
+        const q = state.search.trim().toLowerCase();
+        return QUESTIONS.filter((item) => {
+          if (state.catFilter.size && !state.catFilter.has(item.cat)) return false;
+          if (state.diffFilter.size && !state.diffFilter.has(item.diff)) return false;
+          if (q) {
+            const hay = (`${item.q} ${item.cat} ${item.tags.join(" ")}`).toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          return true;
+        });
+      }
+
+      // ---- 顶部进度 ----
+      function renderStat() {
+        $("#progressStat").innerHTML = `已掌握 <b>${state.done.size}</b>/${QUESTIONS.length}`;
+      }
+
+      // ---- 侧边栏 ----
+      function renderFilters() {
+        const catBox = $("#catFilter");
+        const diffBox = $("#diffFilter");
+        catBox.innerHTML = "";
+        diffBox.innerHTML = "";
+        CATS.forEach((c) => {
+          const active = state.catFilter.has(c);
+          catBox.appendChild(
+            el("button", {
+              class: `chip${active ? " active" : ""}`,
+              text: c,
+              onclick: () => { active ? state.catFilter.delete(c) : state.catFilter.add(c); renderSidebar(); },
+            })
+          );
+        });
+        [1, 2, 3].forEach((d) => {
+          const active = state.diffFilter.has(d);
+          diffBox.appendChild(
+            el("button", {
+              class: `chip${active ? " active" : ""}`,
+              text: DIFF_LABEL[d],
+              onclick: () => { active ? state.diffFilter.delete(d) : state.diffFilter.add(d); renderSidebar(); },
+            })
+          );
+        });
+      }
+
+      function renderSidebar() {
+        renderFilters();
+        const list = $("#qList");
+        list.innerHTML = "";
+        const items = filteredQuestions();
+        if (!items.length) {
+          list.appendChild(el("li", { class: "empty", text: "无匹配题目" }));
+          return;
+        }
+        items.forEach((item, i) => {
+          const li = el("li", {
+            class: (item.id === state.activeId ? "active " : "") + (state.done.has(item.id) ? "done" : ""),
+            onclick: () => { state.activeId = item.id; renderMain(); renderSidebar(); },
+          });
+          li.appendChild(el("span", { class: "q-idx", text: `Q${QUESTIONS.indexOf(item) + 1}` }));
+          li.appendChild(el("span", { class: "q-title", text: item.q.length > 46 ? `${item.q.slice(0, 46)}…` : item.q }));
+          const meta = el("div", { class: "q-meta" });
+          meta.appendChild(el("span", { class: "tag cat", text: item.cat }));
+          meta.appendChild(el("span", { class: `tag d${item.diff}`, text: DIFF_LABEL[item.diff] }));
+          if (state.done.has(item.id)) meta.appendChild(el("span", { class: "done-dot", text: "✓" }));
+          li.appendChild(meta);
+          list.appendChild(li);
+        });
+        renderStat();
+      }
+
+      // ---- 研习主区 ----
+      const SECTIONS = [
+        { key: "idea", name: "解题思路", mark: "IDEA", cls: "mark-idea", open: true },
+        { key: "exp", name: "背景解释", mark: "EXP", cls: "mark-exp", open: false },
+        { key: "ans", name: "参考答案", mark: "ANS", cls: "mark-ans", open: false },
+        { key: "follow", name: "延伸追问", mark: "FLW", cls: "mark-follow", open: false },
+      ];
+
+      function renderMain() {
+        const main = $("#main");
+        main.innerHTML = "";
+        if (state.mode === "mock") { renderMock(main); return; }
+
+        const item = QUESTIONS.find((q) => q.id === state.activeId) || QUESTIONS[0];
+        const idx = QUESTIONS.indexOf(item);
+
+        const head = el("div", { class: "q-head" });
+        head.appendChild(el("div", { class: "kicker", text: `Question ${idx + 1} / ${QUESTIONS.length}` }));
+        head.appendChild(el("h1", { text: item.q }));
+        const meta = el("div", { class: "meta" });
+        meta.appendChild(el("span", { class: "tag cat", text: item.cat }));
+        meta.appendChild(el("span", { class: `tag d${item.diff}`, text: `难度 · ${DIFF_LABEL[item.diff]}` }));
+        item.tags.forEach((t) => {
+          meta.appendChild(el("span", { class: "tag", html: `<span style="color:var(--faint)">#${t}</span>` }));
+        });
+        head.appendChild(meta);
+        main.appendChild(head);
+
+        // 工具行
+        const tools = el("div", { class: "tool-row" });
+        tools.appendChild(el("button", { class: "ghost-btn", text: "全部展开", onclick: () => toggleAll(true) }));
+        tools.appendChild(el("button", { class: "ghost-btn", text: "全部收起", onclick: () => toggleAll(false) }));
+        const doneBtn = el("button", {
+          class: "ghost-btn",
+          text: state.done.has(item.id) ? "✓ 已标记掌握" : "标记为已掌握",
+          onclick: () => {
+            state.done.has(item.id) ? state.done.delete(item.id) : state.done.add(item.id);
+            saveProgress(); renderMain(); renderSidebar();
+          },
+        });
+        if (state.done.has(item.id)) doneBtn.style.color = "var(--green)";
+        tools.appendChild(doneBtn);
+        main.appendChild(tools);
+        main.appendChild(el("div", { style: "height:16px" }));
+
+        SECTIONS.forEach((sec) => {
+          if (!item[sec.key]) return;
+          const section = el("div", { class: `section${sec.open ? " open" : ""}` });
+          const headBtn = el("button", { class: "sec-head", type: "button", onclick: () => section.classList.toggle("open") });
+          headBtn.appendChild(el("span", { class: `sec-mark ${sec.cls}`, text: sec.mark }));
+          headBtn.appendChild(el("span", { class: "sec-name", text: sec.name }));
+          headBtn.appendChild(el("span", { class: "caret", text: "▶" }));
+          section.appendChild(headBtn);
+          section.appendChild(el("div", { class: "sec-body", html: item[sec.key] }));
+          main.appendChild(section);
+        });
+
+        // 导航
+        const nav = el("div", { class: "nav-row" });
+        const prev = el("button", { class: "nav-btn", text: "← 上一题", disabled: idx === 0 ? "true" : null,
+          onclick: () => { if (idx > 0) { state.activeId = QUESTIONS[idx - 1].id; renderMain(); renderSidebar(); scrollTop(); } } });
+        const next = el("button", { class: "nav-btn primary", text: "下一题 →", disabled: idx === QUESTIONS.length - 1 ? "true" : null,
+          onclick: () => { if (idx < QUESTIONS.length - 1) { state.activeId = QUESTIONS[idx + 1].id; renderMain(); renderSidebar(); scrollTop(); } } });
+        nav.appendChild(prev);
+        nav.appendChild(next);
+        main.appendChild(nav);
+      }
+
+      function toggleAll(open) {
+        document.querySelectorAll(".main .section").forEach((s) => {
+          s.classList.toggle("open", open);
+        });
+      }
+      function scrollTop() { window.scrollTo({ top: 0, behavior: "smooth" }); }
+
+      // ================= 模拟面试引擎 =================
+      function renderMock(main) {
+        if (!state.mock) { renderMockSetup(main); return; }
+        if (state.mock.finished) { renderMockReport(main); return; }
+        renderMockQuestion(main);
+      }
+
+      function renderMockSetup(main) {
+        const wrap = el("div", { class: "mock-wrap" });
+        const setup = el("div", { class: "mock-setup" });
+        setup.appendChild(el("h2", { text: "模拟面试 · 配置" }));
+        setup.appendChild(el("p", { class: "sub", text: "选择范围与题量，进入限时作答。每题先自述作答，再对照参考答案自评评分，最后生成成绩单。" }));
+
+        // 分类范围
+        const catField = el("div", { class: "field" });
+        catField.appendChild(el("label", { text: "题目范围（不选=全部）" }));
+        const catRow = el("div", { class: "opt-row" });
+        const chosenCats = state.mockCfg?.cats || new Set();
+        CATS.forEach((c) => {
+          const active = chosenCats.has(c);
+          catRow.appendChild(el("button", {
+            class: `chip${active ? " active" : ""}`, text: c,
+            onclick: () => {
+              state.mockCfg = state.mockCfg || { cats: new Set(), diffs: new Set(), count: 6 };
+              active ? state.mockCfg.cats.delete(c) : state.mockCfg.cats.add(c);
+              renderMain();
+            },
+          }));
+        });
+        catField.appendChild(catRow);
+        setup.appendChild(catField);
+
+        // 难度范围
+        const diffField = el("div", { class: "field" });
+        diffField.appendChild(el("label", { text: "难度范围（不选=全部）" }));
+        const diffRow = el("div", { class: "opt-row" });
+        const chosenDiffs = state.mockCfg?.diffs || new Set();
+        [1, 2, 3].forEach((d) => {
+          const active = chosenDiffs.has(d);
+          diffRow.appendChild(el("button", {
+            class: `chip${active ? " active" : ""}`, text: DIFF_LABEL[d],
+            onclick: () => {
+              state.mockCfg = state.mockCfg || { cats: new Set(), diffs: new Set(), count: 6 };
+              active ? state.mockCfg.diffs.delete(d) : state.mockCfg.diffs.add(d);
+              renderMain();
+            },
+          }));
+        });
+        diffField.appendChild(diffRow);
+        setup.appendChild(diffField);
+
+        // 可选池大小提示
+        const pool = mockPool();
+        // 题量
+        const cntField = el("div", { class: "field" });
+        cntField.appendChild(el("label", { text: "题量" }));
+        const cfg = state.mockCfg || { cats: new Set(), diffs: new Set(), count: 6 };
+        const maxN = Math.max(1, pool.length);
+        const curN = Math.min(cfg.count || 6, maxN);
+        const rangeRow = el("div", { class: "range-row" });
+        const range = el("input", { type: "range", min: "1", max: String(maxN), value: String(curN) });
+        const val = el("span", { class: "val", text: String(curN) });
+        range.addEventListener("input", () => {
+          val.textContent = range.value;
+          state.mockCfg = state.mockCfg || cfg;
+          state.mockCfg.count = Number(range.value);
+        });
+        rangeRow.appendChild(range);
+        rangeRow.appendChild(val);
+        cntField.appendChild(rangeRow);
+        cntField.appendChild(el("p", { class: "sub", style: "margin:8px 0 0", text: `当前范围可用题目：${pool.length} 道` }));
+        setup.appendChild(cntField);
+
+        // 每题时限
+        const timeField = el("div", { class: "field" });
+        timeField.appendChild(el("label", { text: "每题时限" }));
+        const timeRow = el("div", { class: "opt-row" });
+        [
+          { label: "不限时", v: 0 },
+          { label: "3 分钟", v: 180 },
+          { label: "5 分钟", v: 300 },
+          { label: "8 分钟", v: 480 },
+        ].forEach((opt) => {
+          const active = (state.mockCfg?.perQ ?? 300) === opt.v;
+          timeRow.appendChild(el("button", {
+            class: `chip${active ? " active" : ""}`, text: opt.label,
+            onclick: () => { state.mockCfg = state.mockCfg || cfg; state.mockCfg.perQ = opt.v; renderMain(); },
+          }));
+        });
+        timeField.appendChild(timeRow);
+        setup.appendChild(timeField);
+
+        const startBtn = el("button", { class: "start-btn", text: "▶ 开始模拟面试", disabled: pool.length ? null : "true",
+          onclick: startMock });
+        setup.appendChild(startBtn);
+        wrap.appendChild(setup);
+        main.appendChild(wrap);
+      }
+
+      function mockPool() {
+        const cfg = state.mockCfg || { cats: new Set(), diffs: new Set() };
+        return QUESTIONS.filter((q) => {
+          if (cfg.cats?.size && !cfg.cats.has(q.cat)) return false;
+          if (cfg.diffs?.size && !cfg.diffs.has(q.diff)) return false;
+          return true;
+        });
+      }
+
+      function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      function startMock() {
+        const cfg = state.mockCfg || { count: 6, perQ: 300 };
+        const pool = shuffle(mockPool());
+        const count = Math.min(cfg.count || 6, pool.length);
+        const items = pool.slice(0, count);
+        state.mock = {
+          items,
+          answers: items.map(() => ({ text: "", grade: null, revealed: false })),
+          cur: 0,
+          perQ: cfg.perQ ?? 300,
+          finished: false,
+          startedAt: Date.now(),
+        };
+        renderMain();
+        scrollTop();
+      }
+
+      function renderMockQuestion(main) {
+        const m = state.mock;
+        const item = m.items[m.cur];
+        const ans = m.answers[m.cur];
+        const wrap = el("div", { class: "mock-wrap" });
+
+        // 进度条
+        const prog = el("div", { class: "mock-progress" });
+        prog.appendChild(el("span", { class: "count", text: `第 ${m.cur + 1} / ${m.items.length} 题` }));
+        const bar = el("div", { class: "bar" });
+        bar.appendChild(el("i", { style: `width:${((m.cur) / m.items.length) * 100}%` }));
+        prog.appendChild(bar);
+        const timer = el("span", { class: "timer", id: "mockTimer", text: m.perQ ? fmtTime(m.perQ) : "∞" });
+        prog.appendChild(timer);
+        wrap.appendChild(prog);
+
+        // 题面
+        const card = el("div", { class: "mock-card" });
+        card.appendChild(el("div", { class: "kicker", text: `${item.cat} · 难度 ${DIFF_LABEL[item.diff]}` }));
+        card.appendChild(el("h2", { text: item.q }));
+
+        const ta = el("textarea", { placeholder: "在此写下你的作答要点（口述面试时可只记提纲）…" });
+        ta.value = ans.text;
+        ta.addEventListener("input", () => { ans.text = ta.value; });
+        card.appendChild(ta);
+
+        // 提示（思路）—可选查看
+        const hintBtn = el("button", { class: "ghost-btn", style: "margin-top:12px", text: ans.hintOpen ? "隐藏思路提示" : "💡 看一眼思路提示（不影响作答）",
+          onclick: () => { ans.hintOpen = !ans.hintOpen; renderMain(); } });
+        card.appendChild(hintBtn);
+        if (ans.hintOpen) card.appendChild(el("div", { class: "hint-box", html: item.idea }));
+
+        // 揭示答案 + 自评
+        if (!ans.revealed) {
+          card.appendChild(el("div", { style: "margin-top:18px" }, [
+            el("button", { class: "nav-btn primary", text: "提交并查看参考答案", onclick: () => { ans.revealed = true; stopTimer(); renderMain(); } }),
+          ]));
+        } else {
+          const reveal = el("div", { class: "reveal-block" });
+          [
+            { name: "参考答案", mark: "ANS", cls: "mark-ans", key: "ans", open: true },
+            { name: "背景解释", mark: "EXP", cls: "mark-exp", key: "exp", open: false },
+            { name: "解题思路", mark: "IDEA", cls: "mark-idea", key: "idea", open: false },
+            { name: "延伸追问", mark: "FLW", cls: "mark-follow", key: "follow", open: false },
+          ].forEach((sec) => {
+            if (!item[sec.key]) return;
+            const section = el("div", { class: `section${sec.open ? " open" : ""}` });
+            const hb = el("button", { class: "sec-head", type: "button", onclick: () => section.classList.toggle("open") });
+            hb.appendChild(el("span", { class: `sec-mark ${sec.cls}`, text: sec.mark }));
+            hb.appendChild(el("span", { class: "sec-name", text: sec.name }));
+            hb.appendChild(el("span", { class: "caret", text: "▶" }));
+            section.appendChild(hb);
+            section.appendChild(el("div", { class: "sec-body", html: item[sec.key] }));
+            reveal.appendChild(section);
+          });
+          card.appendChild(reveal);
+
+          // 自评
+          const grade = el("div", { class: "self-grade" });
+          grade.appendChild(el("label", { style: "display:block;font-family:var(--mono);font-size:0.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px", text: "对照参考答案，为本题自评：" }));
+          const opts = el("div", { class: "grade-opts" });
+          const gdefs = [
+            { g: 0, cls: "g0", label: "未答对", sub: "0 分 · 关键点缺失" },
+            { g: 1, cls: "g1", label: "部分正确", sub: "0.6 分 · 命中部分" },
+            { g: 2, cls: "g2", label: "完整正确", sub: "1.0 分 · 覆盖要点" },
+          ];
+          gdefs.forEach((gd) => {
+            const b = el("button", { class: `grade-btn ${gd.cls}${ans.grade === gd.g ? " active" : ""}`,
+              onclick: () => { ans.grade = gd.g; gotoNextOrFinish(); } });
+            if (ans.grade === gd.g) { b.style.borderColor = gd.g === 2 ? "var(--green)" : gd.g === 1 ? "var(--yellow)" : "var(--red)"; }
+            b.appendChild(el("div", { text: gd.label }));
+            b.appendChild(el("small", { text: gd.sub }));
+            opts.appendChild(b);
+          });
+          grade.appendChild(opts);
+          card.appendChild(grade);
+        }
+        wrap.appendChild(card);
+
+        // 底部导航
+        const nav = el("div", { class: "nav-row" });
+        nav.appendChild(el("button", { class: "nav-btn", text: "‹ 上一题", disabled: m.cur === 0 ? "true" : null,
+          onclick: () => { if (m.cur > 0) { m.cur--; renderMain(); scrollTop(); } } }));
+        const rightWrap = el("div", { style: "display:flex;gap:8px" });
+        rightWrap.appendChild(el("button", { class: "nav-btn", text: "退出模拟", onclick: () => { stopTimer(); if (confirm("退出并放弃本次模拟？")) { state.mock = null; renderMain(); } } }));
+        if (m.cur < m.items.length - 1) {
+          rightWrap.appendChild(el("button", { class: "nav-btn", text: "跳过 / 下一题 ›", onclick: () => { m.cur++; renderMain(); scrollTop(); } }));
+        } else {
+          rightWrap.appendChild(el("button", { class: "nav-btn primary", text: "结束并出成绩单", onclick: finishMock }));
+        }
+        nav.appendChild(rightWrap);
+        wrap.appendChild(nav);
+        main.appendChild(wrap);
+
+        // 计时器
+        if (m.perQ && !ans.revealed) startTimer(m.perQ, ans);
+        else stopTimer();
+      }
+
+      function gotoNextOrFinish() {
+        const m = state.mock;
+        if (m.cur < m.items.length - 1) { m.cur++; renderMain(); scrollTop(); }
+        else { finishMock(); }
+      }
+
+      // 计时器
+      let timerHandle = null;
+      function startTimer(seconds, ans) {
+        stopTimer();
+        let remain = ans._remain != null ? ans._remain : seconds;
+        ans._remain = remain;
+        const node = $("#mockTimer");
+        const paint = () => {
+          if (!node) return;
+          node.textContent = fmtTime(remain);
+          node.className = `timer${remain <= 30 ? " danger" : remain <= 60 ? " warn" : ""}`;
+        };
+        paint();
+        timerHandle = setInterval(() => {
+          remain--; ans._remain = remain; paint();
+          if (remain <= 0) { stopTimer(); ans.revealed = true; renderMain(); }
+        }, 1000);
+      }
+      function stopTimer() { if (timerHandle) { clearInterval(timerHandle); timerHandle = null; } }
+      function fmtTime(s) { const m = Math.floor(s / 60); const ss = s % 60; return `${m}:${String(ss).padStart(2, "0")}`; }
+
+      function finishMock() {
+        stopTimer();
+        state.mock.finished = true;
+        state.mock.endedAt = Date.now();
+        renderMain();
+        scrollTop();
+      }
+
+      // ---- 成绩单 ----
+      function renderMockReport(main) {
+        const m = state.mock;
+        const scores = m.answers.map((a) => (a.grade === 2 ? 1 : a.grade === 1 ? 0.6 : 0));
+        const total = scores.reduce((s, x) => s + x, 0);
+        const pct = m.items.length ? total / m.items.length : 0;
+        const grade = pct >= 0.95 ? "S" : pct >= 0.9 ? "A" : pct >= 0.8 ? "B" : pct >= 0.7 ? "C" : "D";
+        const gradeColor = { S: "var(--green)", A: "var(--green)", B: "var(--cyan)", C: "var(--yellow)", D: "var(--red)" }[grade];
+        const answered = m.answers.filter((a) => a.grade !== null).length;
+        const fulls = m.answers.filter((a) => a.grade === 2).length;
+        const partials = m.answers.filter((a) => a.grade === 1).length;
+        const misses = m.answers.filter((a) => a.grade === 0).length;
+        const spent = Math.round(((m.endedAt || Date.now()) - m.startedAt) / 1000);
+
+        const wrap = el("div", { class: "mock-wrap" });
+        const rep = el("div", { class: "report" });
+        rep.appendChild(el("h2", { text: "模拟面试 · 成绩单" }));
+
+        // 分数环
+        const hero = el("div", { class: "score-hero" });
+        const R = 54, C = 2 * Math.PI * R;
+        const dash = C * pct;
+        const ring = el("div", { class: "score-ring", html: `
+          <svg viewBox="0 0 130 130" width="130" height="130">
+            <circle cx="65" cy="65" r="${R}" fill="none" stroke="var(--surface-3)" stroke-width="12"/>
+            <circle cx="65" cy="65" r="${R}" fill="none" stroke="${gradeColor}" stroke-width="12"
+              stroke-linecap="round" stroke-dasharray="${dash} ${C}" transform="rotate(-90 65 65)"/>
+            <text x="65" y="60" text-anchor="middle" fill="${gradeColor}" font-size="30" font-family="var(--display)" font-weight="800">${grade}</text>
+            <text x="65" y="82" text-anchor="middle" fill="var(--muted)" font-size="13" font-family="var(--mono)">${Math.round(pct * 100)}%</text>
+          </svg>` });
+        hero.appendChild(ring);
+        const legend = el("div", { class: "score-legend" });
+        legend.appendChild(el("div", { class: "grade-big", style: `color:${gradeColor}`, text: `等级 ${grade}` }));
+        legend.appendChild(el("div", { class: "pct", text: `自评得分 ${total.toFixed(1)} / ${m.items.length}（${Math.round(pct * 100)}%）` }));
+        legend.appendChild(el("div", { class: "pct", style: "margin-top:6px", text: `用时 ${fmtTime(spent)} · 已评 ${answered}/${m.items.length} 题` }));
+        hero.appendChild(legend);
+        rep.appendChild(hero);
+
+        // 分项
+        const bd = el("div", { class: "breakdown" });
+        [
+          { k: "完整正确", v: fulls, c: "var(--green)" },
+          { k: "部分正确", v: partials, c: "var(--yellow)" },
+          { k: "未答对", v: misses, c: "var(--red)" },
+          { k: "题目总数", v: m.items.length, c: "var(--cyan)" },
+        ].forEach((cell) => {
+          const c = el("div", { class: "cell" });
+          c.appendChild(el("div", { class: "k", text: cell.k }));
+          c.appendChild(el("div", { class: "v", style: `color:${cell.c}`, text: String(cell.v) }));
+          bd.appendChild(c);
+        });
+        rep.appendChild(bd);
+
+        // 逐题回顾
+        rep.appendChild(el("h4", { style: "color:var(--cyan);margin:8px 0 4px", text: "逐题回顾" }));
+        m.items.forEach((item, i) => {
+          const a = m.answers[i];
+          const gl = a.grade === 2 ? { t: "完整", c: "var(--green)", bg: "rgba(114,210,155,0.12)" }
+            : a.grade === 1 ? { t: "部分", c: "var(--yellow)", bg: "rgba(242,193,78,0.12)" }
+            : a.grade === 0 ? { t: "未答对", c: "var(--red)", bg: "rgba(255,79,64,0.12)" }
+            : { t: "未评分", c: "var(--faint)", bg: "var(--surface-3)" };
+          const ri = el("div", { class: "review-item" });
+          const rh = el("div", { class: "ri-head" });
+          rh.appendChild(el("span", { class: `tag d${item.diff}`, text: DIFF_LABEL[item.diff] }));
+          rh.appendChild(el("span", { class: "ri-title", text: `Q${i + 1}. ${item.q}` }));
+          rh.appendChild(el("span", { class: "ri-badge", style: `color:${gl.c};background:${gl.bg}`, text: gl.t }));
+          ri.appendChild(rh);
+          // 展开看参考答案
+          const det = el("div", { class: "section", style: "margin-top:10px" });
+          const hb = el("button", { class: "sec-head", type: "button", onclick: () => det.classList.toggle("open") });
+          hb.appendChild(el("span", { class: "sec-mark mark-ans", text: "ANS" }));
+          hb.appendChild(el("span", { class: "sec-name", text: "查看参考答案与你的作答" }));
+          hb.appendChild(el("span", { class: "caret", text: "▶" }));
+          det.appendChild(hb);
+          const body = el("div", { class: "sec-body" });
+          body.appendChild(el("h4", { text: "你的作答" }));
+          body.appendChild(el("div", { style: "white-space:pre-wrap;font-family:var(--mono);font-size:0.82rem;color:var(--muted);border-left:3px solid var(--line);padding-left:12px;margin-bottom:14px", text: a.text.trim() || "（未作答）" }));
+          body.appendChild(el("h4", { text: "参考答案" }));
+          body.appendChild(el("div", { html: item.ans }));
+          det.appendChild(body);
+          ri.appendChild(det);
+          rep.appendChild(ri);
+        });
+
+        // 操作
+        const nav = el("div", { class: "nav-row" });
+        nav.appendChild(el("button", { class: "nav-btn", text: "↺ 再来一次（相同配置）", onclick: startMock }));
+        nav.appendChild(el("button", { class: "nav-btn primary", text: "重新配置模拟", onclick: () => { state.mock = null; renderMain(); scrollTop(); } }));
+        rep.appendChild(nav);
+
+        wrap.appendChild(rep);
+        main.appendChild(wrap);
+      }
+
+      // ---- 模式切换 ----
+      function setMode(mode) {
+        state.mode = mode;
+        document.querySelectorAll("#modeSwitch button").forEach((b) => {
+          b.classList.toggle("active", b.dataset.mode === mode);
+        });
+        $("#sidebar").style.display = mode === "study" ? "" : "none";
+        stopTimer();
+        renderMain();
+        scrollTop();
+      }
+
+      // ---- 初始化 ----
+      function init() {
+        loadProgress();
+        document.querySelectorAll("#modeSwitch button").forEach((b) => {
+          b.addEventListener("click", () => setMode(b.dataset.mode));
+        });
+        $("#searchBox").addEventListener("input", (e) => { state.search = e.target.value; renderSidebar(); });
+        // 键盘导航（研习模式）
+        document.addEventListener("keydown", (e) => {
+          if (state.mode !== "study") return;
+          if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+          const idx = QUESTIONS.findIndex((q) => q.id === state.activeId);
+          if (e.key === "ArrowRight" && idx < QUESTIONS.length - 1) { state.activeId = QUESTIONS[idx + 1].id; renderMain(); renderSidebar(); }
+          if (e.key === "ArrowLeft" && idx > 0) { state.activeId = QUESTIONS[idx - 1].id; renderMain(); renderSidebar(); }
+        });
+        renderSidebar();
+        renderMain();
+        renderStat();
+      }
+      init();
+    </script>
+  </body>
+</html>

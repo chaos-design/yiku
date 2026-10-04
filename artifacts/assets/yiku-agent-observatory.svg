@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Yiku Agent Observatory screenshot</title>
+  <desc id="desc">A dark Agent Observatory page with run history, topology nodes, event inspector, and replay status.</desc>
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0v32" fill="none" stroke="#1f2529" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1440" height="900" fill="#090a0b"/>
+  <rect x="42" y="42" width="1356" height="816" rx="14" fill="#0f1214" stroke="#34393d" stroke-width="2"/>
+  <rect x="42" y="42" width="1356" height="58" rx="14" fill="#1b1f22"/>
+  <text x="82" y="80" fill="#f3f0e9" font-family="Avenir Next, sans-serif" font-size="24" font-weight="700">Yiku Agent Observatory</text>
+  <text x="1210" y="80" fill="#72d29b" font-family="Menlo, monospace" font-size="16">LIVE</text>
+  <rect x="42" y="100" width="248" height="758" fill="#111518"/>
+  <rect x="1112" y="100" width="286" height="758" fill="#111518"/>
+  <rect x="290" y="100" width="822" height="758" fill="url(#grid)"/>
+  <g font-family="Menlo, monospace">
+    <text x="72" y="148" fill="#696f73" font-size="14">RUN HISTORY</text>
+    <rect x="72" y="172" width="188" height="56" rx="6" fill="#202428" stroke="#ff4f40"/>
+    <text x="90" y="198" fill="#f3f0e9" font-size="15">94af1d</text>
+    <text x="90" y="218" fill="#72d29b" font-size="13">running · code</text>
+    <rect x="72" y="242" width="188" height="54" rx="6" fill="#171a1c" stroke="#30363a"/>
+    <text x="90" y="273" fill="#9da3a7" font-size="14">713bd0 · research</text>
+    <rect x="72" y="310" width="188" height="54" rx="6" fill="#171a1c" stroke="#30363a"/>
+    <text x="90" y="341" fill="#9da3a7" font-size="14">68ac22 · review</text>
+    <text x="72" y="430" fill="#696f73" font-size="14">VIEWS</text>
+    <text x="92" y="468" fill="#f3f0e9" font-size="15">Topology</text>
+    <text x="92" y="504" fill="#9da3a7" font-size="15">Trajectory</text>
+    <text x="92" y="540" fill="#9da3a7" font-size="15">Event Log</text>
+  </g>
+  <g stroke="#566066" stroke-width="4" fill="none">
+    <path d="M458 250H638V386H778"/>
+    <path d="M638 386V520H778"/>
+    <path d="M888 386H1008"/>
+    <path d="M888 520H1008"/>
+  </g>
+  <g font-family="Avenir Next, sans-serif">
+    <rect x="350" y="208" width="160" height="84" rx="8" fill="#171a1c" stroke="#ff4f40" stroke-width="3"/>
+    <text x="430" y="244" text-anchor="middle" fill="#f3f0e9" font-size="20" font-weight="700">Prompt</text>
+    <text x="430" y="270" text-anchor="middle" fill="#696f73" font-size="13">completed</text>
+    <rect x="580" y="344" width="160" height="84" rx="8" fill="#171a1c" stroke="#53d6e7" stroke-width="3"/>
+    <text x="660" y="380" text-anchor="middle" fill="#f3f0e9" font-size="20" font-weight="700">Model</text>
+    <text x="660" y="406" text-anchor="middle" fill="#696f73" font-size="13">completed</text>
+    <rect x="790" y="344" width="160" height="84" rx="8" fill="#171a1c" stroke="#f2c14e" stroke-width="3"/>
+    <text x="870" y="380" text-anchor="middle" fill="#f3f0e9" font-size="20" font-weight="700">Tool</text>
+    <text x="870" y="406" text-anchor="middle" fill="#f2c14e" font-size="13">running</text>
+    <rect x="790" y="478" width="160" height="84" rx="8" fill="#171a1c" stroke="#72d29b" stroke-width="3"/>
+    <text x="870" y="514" text-anchor="middle" fill="#f3f0e9" font-size="20" font-weight="700">Memory</text>
+    <text x="870" y="540" text-anchor="middle" fill="#696f73" font-size="13">injected</text>
+    <rect x="1000" y="344" width="84" height="218" rx="8" fill="#171a1c" stroke="#b893ff" stroke-width="3"/>
+    <text x="1042" y="452" text-anchor="middle" fill="#f3f0e9" font-size="18" font-weight="700" transform="rotate(-90 1042 452)">Eval Gate</text>
+  </g>
+  <g font-family="Menlo, monospace">
+    <text x="1140" y="148" fill="#696f73" font-size="14">EVENT INSPECTOR</text>
+    <text x="1140" y="198" fill="#9da3a7" font-size="13">Atom</text>
+    <text x="1220" y="198" fill="#f3f0e9" font-size="14">tool.call</text>
+    <text x="1140" y="244" fill="#9da3a7" font-size="13">Sequence</text>
+    <text x="1248" y="244" fill="#f3f0e9" font-size="14">018</text>
+    <text x="1140" y="290" fill="#9da3a7" font-size="13">Phase</text>
+    <text x="1220" y="290" fill="#f2c14e" font-size="14">start</text>
+    <text x="1140" y="336" fill="#9da3a7" font-size="13">Edge</text>
+    <text x="1220" y="336" fill="#f3f0e9" font-size="14">execution</text>
+    <rect x="1140" y="410" width="218" height="118" rx="6" fill="#171a1c" stroke="#30363a"/>
+    <text x="1160" y="450" fill="#9da3a7" font-size="13">Replay</text>
+    <text x="1160" y="486" fill="#f3f0e9" font-size="20">1x · live follow</text>
+  </g>
+</svg>

@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">Yiku runtime architecture hero</title>
+  <desc id="desc">A dark industrial local agent runtime dashboard with terminal panels, flow nodes, telemetry lanes, and quality gates.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#070809"/>
+      <stop offset="0.48" stop-color="#111417"/>
+      <stop offset="1" stop-color="#050607"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" x2="1">
+      <stop offset="0" stop-color="#ff4f40"/>
+      <stop offset="1" stop-color="#f2c14e"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" x2="1">
+      <stop offset="0" stop-color="#53d6e7"/>
+      <stop offset="1" stop-color="#72d29b"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.25 0 1 0 0 0.72 0 0 1 0 0.95 0 0 0 0.7 0"/>
+      <feBlend in="SourceGraphic"/>
+    </filter>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0v48" fill="none" stroke="#20262a" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#grid)" opacity="0.42"/>
+  <rect x="0" y="0" width="1920" height="1080" fill="#000" opacity="0.18"/>
+
+  <g opacity="0.92">
+    <rect x="1020" y="142" width="690" height="560" rx="14" fill="#111518" stroke="#34393d" stroke-width="2"/>
+    <rect x="1050" y="174" width="630" height="58" rx="8" fill="#1b1f22"/>
+    <text x="1080" y="211" fill="#9da3a7" font-family="Menlo, monospace" font-size="22">ATOMIC FLOW / LIVE RUN</text>
+
+    <g stroke="#566066" stroke-width="5" fill="none" stroke-linecap="round">
+      <path d="M1168 346H1325V456H1452"/>
+      <path d="M1325 456V566H1452"/>
+      <path d="M1452 456H1585"/>
+      <path d="M1452 566H1585"/>
+    </g>
+    <g filter="url(#glow)">
+      <rect x="1102" y="306" width="132" height="78" rx="8" fill="#171c1f" stroke="#ff4f40" stroke-width="3"/>
+      <rect x="1260" y="416" width="130" height="80" rx="8" fill="#171c1f" stroke="#53d6e7" stroke-width="3"/>
+      <rect x="1416" y="416" width="112" height="80" rx="8" fill="#171c1f" stroke="#f2c14e" stroke-width="3"/>
+      <rect x="1416" y="526" width="112" height="80" rx="8" fill="#171c1f" stroke="#72d29b" stroke-width="3"/>
+      <rect x="1560" y="416" width="124" height="80" rx="8" fill="#171c1f" stroke="#b893ff" stroke-width="3"/>
+      <rect x="1560" y="526" width="124" height="80" rx="8" fill="#171c1f" stroke="#6f9dff" stroke-width="3"/>
+    </g>
+    <g fill="#f3f0e9" font-family="Avenir Next, sans-serif" font-size="20" font-weight="700">
+      <text x="1130" y="353">Prompt</text>
+      <text x="1292" y="465">Model</text>
+      <text x="1445" y="465">Tool</text>
+      <text x="1439" y="575">Memory</text>
+      <text x="1595" y="465">Eval</text>
+      <text x="1589" y="575">Studio</text>
+    </g>
+    <g fill="#7d858a" font-family="Menlo, monospace" font-size="14">
+      <text x="1120" y="642">sequence: 000214</text>
+      <text x="1120" y="670">run: local-session / stage-2</text>
+    </g>
+  </g>
+
+  <g opacity="0.88">
+    <rect x="190" y="198" width="650" height="430" rx="14" fill="#0b0d0f" stroke="#34393d" stroke-width="2"/>
+    <rect x="190" y="198" width="650" height="46" rx="14" fill="#1b1f22"/>
+    <circle cx="224" cy="221" r="7" fill="#ff4f40"/>
+    <circle cx="250" cy="221" r="7" fill="#f2c14e"/>
+    <circle cx="276" cy="221" r="7" fill="#72d29b"/>
+    <text x="314" y="228" fill="#9da3a7" font-family="Menlo, monospace" font-size="16">yiku runtime</text>
+    <g font-family="Menlo, monospace" font-size="19">
+      <text x="232" y="300" fill="#53d6e7">tool</text>
+      <text x="310" y="300" fill="#d8d8d3">grep packages/agent-orchestrator</text>
+      <text x="232" y="348" fill="#72d29b">agent</text>
+      <text x="310" y="348" fill="#d8d8d3">SessionRuntime opened stage boundary</text>
+      <text x="232" y="396" fill="#f2c14e">eval</text>
+      <text x="310" y="396" fill="#d8d8d3">flow-integrity passed</text>
+      <text x="232" y="444" fill="#b893ff">memory</text>
+      <text x="310" y="444" fill="#d8d8d3">context injected with scoped recall</text>
+      <text x="232" y="492" fill="#ff4f40">gate</text>
+      <text x="310" y="492" fill="#d8d8d3">completion decision: accepted</text>
+      <text x="232" y="560" fill="#696f73">append-only timeline / deterministic replay</text>
+    </g>
+  </g>
+
+  <g opacity="0.75">
+    <rect x="300" y="725" width="1230" height="112" rx="14" fill="#111518" stroke="#34393d"/>
+    <rect x="340" y="762" width="165" height="36" rx="4" fill="#24282c" stroke="#ff4f40"/>
+    <rect x="545" y="762" width="165" height="36" rx="4" fill="#24282c" stroke="#53d6e7"/>
+    <rect x="750" y="762" width="165" height="36" rx="4" fill="#24282c" stroke="#72d29b"/>
+    <rect x="955" y="762" width="165" height="36" rx="4" fill="#24282c" stroke="#f2c14e"/>
+    <rect x="1160" y="762" width="165" height="36" rx="4" fill="#24282c" stroke="#b893ff"/>
+    <g fill="#d8d8d3" font-family="Menlo, monospace" font-size="15">
+      <text x="378" y="786">Code</text>
+      <text x="583" y="786">Hooks</text>
+      <text x="781" y="786">Memory</text>
+      <text x="994" y="786">Evals</text>
+      <text x="1196" y="786">Studio</text>
+    </g>
+    <path d="M505 780H545M710 780H750M915 780H955M1120 780H1160" stroke="#626a70" stroke-width="2"/>
+  </g>
+
+  <rect x="0" y="0" width="1920" height="1080" fill="url(#red)" opacity="0.08"/>
+  <rect x="0" y="0" width="1920" height="1080" fill="url(#cyan)" opacity="0.07"/>
+</svg>

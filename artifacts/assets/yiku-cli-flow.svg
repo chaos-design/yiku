@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Yiku CLI execution flow screenshot</title>
+  <desc id="desc">A dark terminal-like screenshot showing Yiku CLI prompt, tool calls, subagent activity, evaluation, and final persisted status.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#090a0b"/>
+      <stop offset="1" stop-color="#15191c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="900" fill="url(#bg)"/>
+  <rect x="60" y="58" width="1320" height="784" rx="16" fill="#0b0d0f" stroke="#34393d" stroke-width="2"/>
+  <rect x="60" y="58" width="1320" height="54" rx="16" fill="#1b1f22"/>
+  <circle cx="96" cy="85" r="8" fill="#ff4f40"/>
+  <circle cx="124" cy="85" r="8" fill="#f2c14e"/>
+  <circle cx="152" cy="85" r="8" fill="#72d29b"/>
+  <text x="190" y="92" fill="#9da3a7" font-family="Menlo, Consolas, monospace" font-size="18">yiku / local agent runtime</text>
+  <g font-family="Menlo, Consolas, monospace" font-size="22">
+    <text x="96" y="162" fill="#f3f0e9">› 审查当前仓库的权限边界，并运行验证</text>
+    <text x="96" y="226" fill="#696f73">10:21:05</text><text x="230" y="226" fill="#72d29b">AGENT</text><text x="332" y="226" fill="#d7d8d4">code · stage 1 · context 42K / 128K</text>
+    <text x="96" y="282" fill="#696f73">10:21:06</text><text x="230" y="282" fill="#53d6e7">TOOL</text><text x="332" y="282" fill="#d7d8d4">grep "PermissionProfile" packages/</text>
+    <text x="96" y="338" fill="#696f73">10:21:06</text><text x="230" y="338" fill="#9da3a7">RESULT</text><text x="332" y="338" fill="#d7d8d4">42 matches · 9 files · bounded output</text>
+    <text x="96" y="394" fill="#696f73">10:21:08</text><text x="230" y="394" fill="#53d6e7">TOOL</text><text x="332" y="394" fill="#d7d8d4">read packages/cli/src/permission/profile-store.ts</text>
+    <text x="96" y="450" fill="#696f73">10:21:12</text><text x="230" y="450" fill="#b893ff">SUBAGENT</text><text x="364" y="450" fill="#d7d8d4">reviewer · read-only · completed</text>
+    <text x="96" y="506" fill="#696f73">10:21:15</text><text x="230" y="506" fill="#53d6e7">TOOL</text><text x="332" y="506" fill="#d7d8d4">bash corepack pnpm --filter @yiku/cli test</text>
+    <text x="96" y="562" fill="#696f73">10:21:22</text><text x="230" y="562" fill="#f2c14e">EVAL</text><text x="332" y="562" fill="#d7d8d4">7 passed · score 0.94 · decision accepted</text>
+    <text x="96" y="618" fill="#696f73">10:21:23</text><text x="230" y="618" fill="#ff4f40">GATE</text><text x="332" y="618" fill="#d7d8d4">completion persisted · Atomic Flow run closed</text>
+  </g>
+  <rect x="96" y="690" width="1180" height="78" rx="8" fill="#111518" stroke="#34393d"/>
+  <text x="124" y="723" fill="#9da3a7" font-family="Menlo, Consolas, monospace" font-size="18">Atomic Flow</text>
+  <text x="124" y="752" fill="#d7d8d4" font-family="Menlo, Consolas, monospace" font-size="18">prompt → model.invoke → tool.call → observation → eval.gate → reply.final</text>
+</svg>
