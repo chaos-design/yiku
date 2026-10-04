@@ -1,0 +1,24 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "../dist-server",
+    "rootDir": ".",
+    "tsBuildInfoFile": "../dist-server/tsconfig.tsbuildinfo"
+  },
+  "include": ["**/*.ts"],
+  "references": [
+    {
+      "path": "../../../packages/config"
+    },
+    {
+      "path": "../../../packages/atomic-flow"
+    },
+    {
+      "path": "../../../packages/agents/research"
+    },
+    {
+      "path": "../../../packages/agent-orchestrator"
+    }
+  ]
+}

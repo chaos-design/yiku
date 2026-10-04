@@ -1,0 +1,30 @@
+{
+  "name": "@yiku/agent-observatory-playground",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "build:web": "vite build",
+    "dev": "node scripts/dev.mjs",
+    "dev:server": "tsx watch server/dev-server.ts",
+    "dev:web": "vite",
+    "typecheck": "tsc -b",
+    "watch": "tsc -b --watch --preserveWatchOutput"
+  },
+  "dependencies": {
+    "@yiku/agent-observatory": "workspace:*",
+    "@yiku/agent-studio": "workspace:*",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2",
+    "vite": "^8"
+  }
+}
