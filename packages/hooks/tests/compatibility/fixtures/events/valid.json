@@ -1,0 +1,285 @@
+[
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "SessionStart",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "source": "startup",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "Setup",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl",
+    "trigger": "init"
+  },
+  {
+    "cwd": "/workspace",
+    "file_path": "/workspace/CLAUDE.md",
+    "hook_event_name": "InstructionsLoaded",
+    "load_reason": "session_start",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "UserPromptSubmit",
+    "permission_mode": "default",
+    "prompt": "review this",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "command_name": "review",
+    "cwd": "/workspace",
+    "hook_event_name": "UserPromptExpansion",
+    "permission_mode": "default",
+    "prompt": "review this",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "MessageDisplay",
+    "message": "done",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "PreToolUse",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "tool_input": { "command": "pnpm test" },
+    "tool_name": "Bash",
+    "tool_use_id": "tool-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "PermissionRequest",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "tool_input": { "command": "pnpm test" },
+    "tool_name": "Bash",
+    "tool_use_id": "tool-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "PostToolUse",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "tool_input": { "command": "pnpm test" },
+    "tool_name": "Bash",
+    "tool_response": "passed",
+    "tool_use_id": "tool-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "error": "failed",
+    "hook_event_name": "PostToolUseFailure",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "tool_input": { "command": "pnpm test" },
+    "tool_name": "Bash",
+    "tool_use_id": "tool-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "PostToolBatch",
+    "permission_mode": "default",
+    "results": [
+      {
+        "status": "succeeded",
+        "tool_name": "Bash",
+        "tool_use_id": "tool-1"
+      }
+    ],
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "denial_reason": "blocked",
+    "hook_event_name": "PermissionDenied",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "tool_input": { "command": "rm -rf build" },
+    "tool_name": "Bash",
+    "tool_use_id": "tool-2",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "Notification",
+    "message": "Approval required",
+    "notification_type": "permission_prompt",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "agent_id": "agent-1",
+    "agent_type": "reviewer",
+    "cwd": "/workspace",
+    "hook_event_name": "SubagentStart",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "agent_id": "agent-1",
+    "agent_transcript_path": "/tmp/agent.jsonl",
+    "agent_type": "reviewer",
+    "cwd": "/workspace",
+    "hook_event_name": "SubagentStop",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "stop_hook_active": false,
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "TaskCreated",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "task": {
+      "id": "task-1",
+      "status": "pending",
+      "subject": "Review code"
+    },
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "TaskCompleted",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "task": {
+      "id": "task-1",
+      "status": "completed",
+      "subject": "Review code"
+    },
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "Stop",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "stop_hook_active": false,
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "error": "rate limited",
+    "error_type": "rate_limit",
+    "hook_event_name": "StopFailure",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "TeammateIdle",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "teammate_name": "worker-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "file_path": "/workspace/.claude/settings.json",
+    "hook_event_name": "ConfigChange",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "source": "project_settings",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "CwdChanged",
+    "new_cwd": "/workspace/packages",
+    "old_cwd": "/workspace",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "file_path": "/workspace/.env",
+    "hook_event_name": "FileChanged",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "WorktreeCreate",
+    "name": "feature",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "WorktreeRemove",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl",
+    "worktree_path": "/tmp/worktree"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "PreCompact",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl",
+    "trigger": "auto"
+  },
+  {
+    "compact_summary": "summary",
+    "cwd": "/workspace",
+    "hook_event_name": "PostCompact",
+    "permission_mode": "default",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl",
+    "trigger": "auto"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "SessionEnd",
+    "permission_mode": "default",
+    "reason": "prompt_input_exit",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "cwd": "/workspace",
+    "hook_event_name": "Elicitation",
+    "mcp_server_name": "forms",
+    "message": "Choose a value",
+    "permission_mode": "default",
+    "request_id": "request-1",
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  },
+  {
+    "action": "accept",
+    "cwd": "/workspace",
+    "hook_event_name": "ElicitationResult",
+    "mcp_server_name": "forms",
+    "permission_mode": "default",
+    "request_id": "request-1",
+    "result": { "value": "one" },
+    "session_id": "session-1",
+    "transcript_path": "/tmp/transcript.jsonl"
+  }
+]

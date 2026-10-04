@@ -1,0 +1,40 @@
+[
+  {
+    "eventName": "PreToolUse",
+    "output": {
+      "hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "deny",
+        "permissionDecisionReason": "Destructive command blocked"
+      }
+    }
+  },
+  {
+    "eventName": "UserPromptSubmit",
+    "output": {
+      "additionalContext": "Use the current project policy."
+    }
+  },
+  {
+    "eventName": "Stop",
+    "output": {
+      "decision": "block",
+      "reason": "Tests have not passed."
+    }
+  },
+  {
+    "eventName": "MessageDisplay",
+    "output": {
+      "hookSpecificOutput": {
+        "hookEventName": "MessageDisplay",
+        "updatedValue": "Sanitized output"
+      }
+    }
+  },
+  {
+    "eventName": "Notification",
+    "output": {
+      "systemMessage": "Notification delivered"
+    }
+  }
+]

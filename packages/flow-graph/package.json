@@ -1,0 +1,24 @@
+{
+  "name": "@yiku/flow-graph",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean && rm -rf dist",
+    "test": "vitest run --root ../.. packages/flow-graph/tests",
+    "watch": "tsc -b --watch --preserveWatchOutput"
+  }
+}

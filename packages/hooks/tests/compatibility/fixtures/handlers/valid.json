@@ -1,0 +1,40 @@
+[
+  {
+    "async": true,
+    "asyncRewake": true,
+    "command": "node .claude/hooks/audit.mjs",
+    "once": true,
+    "timeout": 30,
+    "type": "command"
+  },
+  {
+    "allowedEnvVars": ["HOOK_TOKEN"],
+    "headers": {
+      "Authorization": "Bearer $HOOK_TOKEN"
+    },
+    "timeout": 10,
+    "type": "http",
+    "url": "https://hooks.example.test/events"
+  },
+  {
+    "model": "fast-model",
+    "prompt": "Evaluate this event: $ARGUMENTS",
+    "timeout": 30,
+    "type": "prompt"
+  },
+  {
+    "maxTurns": 20,
+    "prompt": "Inspect the repository and decide: $ARGUMENTS",
+    "timeout": 60,
+    "type": "agent"
+  },
+  {
+    "arguments": {
+      "mode": "strict"
+    },
+    "server": "policy",
+    "timeout": 20,
+    "tool": "evaluate",
+    "type": "mcp"
+  }
+]
