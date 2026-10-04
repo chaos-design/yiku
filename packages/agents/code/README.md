@@ -22,9 +22,9 @@
 - `createCodeEvalProfile` / `createCodeEvaluators`
 - Prompt、Permission、Middleware 和 Trace 辅助 API
 
-## Toolset
+## 工具集
 
-| Access Mode | 工具 |
+| 访问模式 | 工具 |
 | --- | --- |
 | `read-only` | Bash、Grep、Ls、Tree、TextEditor、TODO、AskUserQuestion；写操作先请求升级 |
 | `read-write` | 同一稳定 Toolset；普通 Workspace 编辑直接运行 |
@@ -40,7 +40,7 @@ Terminal 会显式切换 Host Policy、同步更新权限策略并发出边界�
 调用方必须执行 `CodeToolset.close()`。`codeTools()` 只返回 Tool 数组，无法向调用方暴露资源
 关闭入口。
 
-## Code Evals
+## Code 评估
 
 Code Provider 生成文件 Before/After Digest、Scope、Symlink 和命令回执证据。Verification
 Command 只接受结构化 `command + args`，默认禁网，保留有界 Head/Tail 和完整输出 Digest。

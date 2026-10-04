@@ -35,12 +35,12 @@ flowchart LR
 | --- | --- | --- |
 | callback | 无 | Runtime 来源、deadline |
 | command | Node 子进程 | 进程树、字节上限、退出码 |
-| HTTP | HTTPS Transport | SSRF、DNS、Redirect |
+| HTTP | HTTPS 传输 | SSRF、DNS、重定向 |
 | prompt | `HookModelRunner` | 结构化输出、Token、超时 |
 | agent | `HookAgentRunner` | Turn、Tool、Token、深度 |
 | MCP | `HookMcpInvoker` | Target allowlist、重入 |
 
-## Trust
+## 信任
 
 外部副作用 Handler 默认需要显式信任。Trust Key 对 Source、Handler Hash、Executor、环境权限和
 能力摘要敏感；配置变化后旧信任不会继续生效。

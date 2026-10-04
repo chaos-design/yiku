@@ -8,7 +8,7 @@ Workspace、网络策略和运行时只读路径编译为可交给 Node `spawn()
 | 平台 | 隔离边界 | 网络控制 |
 | --- | --- | --- |
 | macOS | `/usr/bin/sandbox-exec` Profile | `allow` / `deny` |
-| Linux | rootless `bubblewrap` Namespace | `allow` / `deny` |
+| Linux | rootless `bubblewrap` 命名空间 | `allow` / `deny` |
 | Windows | 暂不支持，显式失败 | 不适用 |
 
 默认隔离器会在每次生成启动描述时执行可用性探针。缺少隔离器、探针失败、平台不支持或禁止
