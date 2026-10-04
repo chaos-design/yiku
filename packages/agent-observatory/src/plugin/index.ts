@@ -1,0 +1,4 @@
+export {
+  AGENT_OBSERVATORY_MANIFEST,
+  AGENT_OBSERVATORY_PLUGIN_ID,
+} from "./manifest.js";

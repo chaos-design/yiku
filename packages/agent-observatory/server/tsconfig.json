@@ -1,0 +1,21 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "../dist-server",
+    "rootDir": ".",
+    "tsBuildInfoFile": "../node_modules/.cache/tsconfig.server.tsbuildinfo"
+  },
+  "include": ["**/*.ts"],
+  "references": [
+    {
+      "path": "../../agent-studio"
+    },
+    {
+      "path": "../../atomic-flow"
+    },
+    {
+      "path": "../../config"
+    }
+  ]
+}

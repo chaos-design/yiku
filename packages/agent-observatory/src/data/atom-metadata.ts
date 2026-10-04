@@ -1,0 +1,95 @@
+import type { AtomicDefinition, AtomicKind } from "@yiku/atomic-flow/browser";
+
+const ATOM_RESPONSIBILITIES: Readonly<Record<string, string>> = Object.freeze({
+  "action.gate": "判断模型输出应进入工具调用、Handoff，还是生成最终回复。",
+  "agent.execute": "以 profileId 和 agentId 关联子 Agent 执行 Span，并在 Result 到达时闭合。",
+  "agent.profile": "记录 Session Profile 的创建、删除或取消，包括 profileId 与 Agent Type。",
+  "agent.result": "发布带 profileId、agentId、taskId 和终态的结构化子 Agent 结果。",
+  "agent.select": "解析当前阶段使用的 Agent、模型、工具和 Skill 能力。",
+  "agent.spawn": "从 Session Profile 创建执行实例并关联 profileId、agentId 与 taskId。",
+  "context.compact": "将过长会话压缩为可继续执行的上下文摘要。",
+  "eval.final-output": "检查最终输出是否存在并满足基础完整性要求。",
+  "eval.attempt": "标记一次不可变评测尝试，并关联 Plan、证据、Scorecard 和修复次数。",
+  "eval.decision": "根据 Scorecard、Receipt 和剩余预算生成完成决策。",
+  "eval.flow-integrity": "验证事件顺序、父子实例和原子生命周期是否完整。",
+  "eval.gate": "根据 Scorecard 决定本次结果接受或拒绝。",
+  "eval.judge": "使用模型对输出质量进行补充判断。",
+  "eval.memory-safety": "检查 Memory 事件中是否出现凭据或敏感模式。",
+  "eval.repair": "把失败检查和证据转换为一次有界修复尝试。",
+  "eval.scorecard": "汇总各 Evaluator 的分数、通过状态和诊断。",
+  "eval.trigger": "在最终回复完成后启动质量评估链路。",
+  "flow.sink-error": "记录观测 Sink 写入失败，同时保持源 Run 继续执行。",
+  handoff: "把当前任务控制权交给另一个 Agent。",
+  "hook.dispatch": "匹配当前生命周期事件对应的 Yiku Hook。",
+  "hook.execute": "在信任、超时和资源限制下执行匹配的 Hook。",
+  "input.prompt": "接收顶层用户 Prompt，并建立本次 Run 的输入边界。",
+  "loop.turn": "表示 Agent Loop 中一次完整的思考与行动迭代。",
+  "memory.context-inject": "把筛选后的长期记忆加入本轮 Agent 上下文。",
+  "memory.consolidate": "把 Working Memory 候选去重、分类并整合为长期记忆。",
+  "memory.extract": "从成功的 Agent Turn 中提取可复用记忆草稿。",
+  "memory.forget": "按 Working、Soft Forget 或 Hard Forget 语义移除记忆。",
+  "memory.fts-search": "使用全文索引查找关键词相关的记忆候选。",
+  "memory.procedure": "表示可复用的操作步骤和工作流程记忆。",
+  "memory.prune": "显式清理过期或已 Soft Delete 的长期记忆。",
+  "memory.query-embedding": "为记忆查询生成向量表示。",
+  "memory.recall": "启动记忆召回，并组织检索查询与范围。",
+  "memory.rerank": "合并全文与向量候选并重新排序。",
+  "memory.scenario": "表示与具体任务情境相关的经验记忆。",
+  "memory.search": "统一搜索 Working 与长期记忆，并应用 Class 过滤。",
+  "memory.semantic": "表示稳定事实、决策和概念关系。",
+  "memory.vector-search": "使用向量相似度查找语义相关记忆。",
+  "memory.working": "保存当前 Session 的目标、任务、回答和待整合候选。",
+  "memory.working-capture": "从 Prompt、任务、用户回答和操作摘要捕获 Working Memory。",
+  "memory.write": "验证并持久化通过策略检查的记忆。",
+  "model.invoke": "向模型发送当前上下文并接收流式响应。",
+  observation: "把工具结果或外部反馈转换为下一轮模型可用的观察。",
+  "reply.final": "提交当前 Run 的最终 Assistant 回复。",
+  run: "承载一次顶层 Prompt 的完整 Agent 执行生命周期。",
+  "runtime.boundary": "记录 Shell 强隔离不可用后切换到 Host Policy 的边界变化与原因。",
+  "session.checkpoint": "持久化阶段状态、历史和结果未知的副作用。",
+  "session.resume": "从持久化状态恢复未完成 Session。",
+  "skill.activate": "把已解析的 Skill Snapshot 激活到指定 Tool Call 或 Worker。",
+  "skill.execute": "以 workerId 关联隔离 Skill Worker 的开始、完成和失败事件。",
+  "skill.resolve": "解析 Skill Snapshot，并固定来源、版本与内容 digest。",
+  "stage.finish": "结束当前执行阶段并记录完成、暂停或失败结果。",
+  "stage.start": "启动受预算、超时和策略约束的新阶段。",
+  "subagent.lifecycle": "记录子 Agent 的启动、完成、阻塞和失败状态。",
+  "task.snapshot": "发布持久任务的待处理、进行中、完成和阻塞计数。",
+  "tool.call": "执行模型选择的工具，并收集结构化结果。",
+  "trace.append": "把原子事件按顺序写入 Trace 与观测 Sink。",
+  "trajectory.project": "把底层 Trace 投影为可阅读和可诊断的执行轨迹。",
+  "usage.record": "记录模型 Token 使用量与 Context Window 指标。",
+  "user.question": "在同一 Run 内暂停执行并等待用户回答结构化问题。",
+});
+
+export const ATOM_KIND_EXPLANATIONS: readonly {
+  readonly kind: AtomicKind;
+  readonly text: string;
+}[] = Object.freeze([
+  { kind: "input", text: "用户输入、Session 或 Run 边界。" },
+  { kind: "loop", text: "阶段与 Agent 循环控制。" },
+  { kind: "agent", text: "Agent 选择和子 Agent 生命周期。" },
+  { kind: "skill", text: "Skill 解析、激活和隔离 Worker 执行。" },
+  { kind: "model", text: "模型调用与流式生成。" },
+  { kind: "action", text: "模型输出后的动作分派。" },
+  { kind: "tool", text: "外部工具调用和结果。" },
+  { kind: "hook", text: "Yiku Hook 匹配与执行。" },
+  { kind: "context", text: "上下文构建与压缩。" },
+  { kind: "memory", text: "长期记忆召回、处理和写入。" },
+  { kind: "store", text: "检查点与持久状态。" },
+  { kind: "usage", text: "Token 和资源使用量。" },
+  { kind: "handoff", text: "Agent 之间的控制权转移。" },
+  { kind: "reply", text: "最终回复边界。" },
+  { kind: "trace", text: "事实事件持久化与观测。" },
+  { kind: "trajectory", text: "执行轨迹投影。" },
+  { kind: "eval", text: "质量评估和评分。" },
+  { kind: "release", text: "评估后的发布门禁。" },
+]);
+
+export function atomKindDescription(kind: AtomicKind): string {
+  return ATOM_KIND_EXPLANATIONS.find((entry) => entry.kind === kind)?.text ?? "运行时扩展原子。";
+}
+
+export function atomResponsibility(atom: Pick<AtomicDefinition, "key" | "kind">): string {
+  return ATOM_RESPONSIBILITIES[atom.key] ?? atomKindDescription(atom.kind);
+}

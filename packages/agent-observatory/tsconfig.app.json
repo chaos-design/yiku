@@ -1,0 +1,35 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ES2023"],
+    "noEmit": true,
+    "tsBuildInfoFile": "node_modules/.cache/tsconfig.app.tsbuildinfo",
+    "types": ["vite/client"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
+  "references": [
+    {
+      "path": "../agent-orchestrator"
+    },
+    {
+      "path": "../agent-studio"
+    },
+    {
+      "path": "../atomic-flow"
+    },
+    {
+      "path": "../evals"
+    },
+    {
+      "path": "../flow-graph"
+    },
+    {
+      "path": "../memories"
+    },
+    {
+      "path": "../trajectory"
+    }
+  ]
+}

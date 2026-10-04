@@ -1,0 +1,36 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ES2023"],
+    "outDir": "dist-client",
+    "rootDir": "src",
+    "tsBuildInfoFile": "node_modules/.cache/tsconfig.lib.tsbuildinfo"
+  },
+  "exclude": ["src/main.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "references": [
+    {
+      "path": "../agent-orchestrator"
+    },
+    {
+      "path": "../agent-studio"
+    },
+    {
+      "path": "../atomic-flow"
+    },
+    {
+      "path": "../evals"
+    },
+    {
+      "path": "../flow-graph"
+    },
+    {
+      "path": "../memories"
+    },
+    {
+      "path": "../trajectory"
+    }
+  ]
+}

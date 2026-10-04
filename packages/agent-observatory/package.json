@@ -1,0 +1,78 @@
+{
+  "name": "@yiku/agent-observatory",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist-client/index.js",
+  "types": "./dist-client/index.d.ts",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist-client/index.d.ts",
+      "import": "./dist-client/index.js"
+    },
+    "./plugin": {
+      "development": "./src/plugin/index.ts",
+      "types": "./dist-client/plugin/index.d.ts",
+      "import": "./dist-client/plugin/index.js"
+    },
+    "./plugin/react": {
+      "development": "./src/plugin/client-plugin.tsx",
+      "types": "./dist-client/plugin/client-plugin.d.ts",
+      "import": "./dist-client/plugin/client-plugin.js"
+    },
+    "./plugin/server": {
+      "development": "./server/plugin.ts",
+      "types": "./dist-server/plugin.d.ts",
+      "import": "./dist-server/plugin.js"
+    },
+    "./styles.css": "./src/index.css",
+    "./server": {
+      "development": "./server/index.ts",
+      "types": "./dist-server/index.d.ts",
+      "import": "./dist-server/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "dist-client",
+    "dist-server",
+    "server",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "build:web": "vite build",
+    "clean": "tsc -b --clean && rm -rf dist dist-client dist-server",
+    "dev": "node scripts/dev.mjs",
+    "dev:server": "tsx watch server/dev-server.ts",
+    "dev:web": "vite",
+    "lint": "biome check .",
+    "test": "vitest run --root ../.. packages/agent-observatory/tests",
+    "typecheck": "tsc -b",
+    "watch": "tsc -b --watch --preserveWatchOutput"
+  },
+  "dependencies": {
+    "@radix-ui/react-tooltip": "^1.2.16",
+    "@yiku/agent-orchestrator": "workspace:*",
+    "@yiku/agent-studio": "workspace:*",
+    "@yiku/atomic-flow": "workspace:*",
+    "@yiku/config": "workspace:*",
+    "@yiku/evals": "workspace:*",
+    "@yiku/flow-graph": "workspace:*",
+    "@yiku/memories": "workspace:*",
+    "@yiku/trajectory": "workspace:*",
+    "lucide-react": "^1.27.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2",
+    "vite": "^8",
+    "vitest": "^4.1.10"
+  }
+}
