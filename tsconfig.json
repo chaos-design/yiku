@@ -1,0 +1,53 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/flow-graph"
+    },
+    {
+      "path": "./packages/atomic-flow"
+    },
+    {
+      "path": "./packages/config"
+    },
+    {
+      "path": "./packages/sandbox"
+    },
+    {
+      "path": "./packages/evals"
+    },
+    {
+      "path": "./packages/memories"
+    },
+    {
+      "path": "./packages/trajectory"
+    },
+    {
+      "path": "./packages/hooks"
+    },
+    {
+      "path": "./packages/agents/code"
+    },
+    {
+      "path": "./packages/agents/research"
+    },
+    {
+      "path": "./packages/agent-orchestrator"
+    },
+    {
+      "path": "./packages/agent-studio"
+    },
+    {
+      "path": "./packages/agent-observatory"
+    },
+    {
+      "path": "./packages/cli"
+    },
+    {
+      "path": "./playground/agent-observatory"
+    },
+    {
+      "path": "./playground/research-agent"
+    }
+  ]
+}

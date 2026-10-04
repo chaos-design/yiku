@@ -1,0 +1,16 @@
+packages:
+  - "packages/*"
+  - "packages/agents/*"
+  - "playground/*"
+
+onlyBuiltDependencies:
+  - esbuild
+allowBuilds:
+  esbuild: true
+
+overrides:
+  "@hono/node-server": 2.0.12
+
+minimumReleaseAgeExclude:
+  - shadcn@4.16.0
+  - '@types/react-dom@19.2.4'

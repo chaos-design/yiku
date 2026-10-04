@@ -1,0 +1,40 @@
+{
+  "name": "yiku",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "build": "tsc -b && corepack pnpm --filter @yiku/agent-observatory build:web",
+    "check": "corepack pnpm lint && corepack pnpm build && corepack pnpm test",
+    "clean": "tsc -b --clean && rm -rf packages/*/dist packages/*/dist-client packages/*/dist-server packages/agents/*/dist playground/*/dist playground/*/dist-server coverage",
+    "dev": "corepack pnpm --filter @yiku/cli dev --",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome check .",
+    "test": "vitest run --coverage --maxWorkers=4",
+    "watch": "corepack pnpm --filter \"./packages/**\" --parallel watch"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.5",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@vitest/coverage-v8": "^4.1.10",
+    "ink-testing-library": "^4.0.0",
+    "jsdom": "^26.1.0",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "description": "Yiku is an Ink + React + TypeScript command-line app backed by an agent orchestrator built on the OpenAI Agents SDK.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

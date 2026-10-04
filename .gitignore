@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+coverage/
+dist/
+dist*/
+packages/*/dist/
+packages/agents/*/dist/
+
+# Package manager local state
+.corepack/
+.pnpm-home/
+.pnpm-state/
+.pnpm-store/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs and local OS files
+*.log
+.DS_Store
+.yiku/
+env-sessions/
+
+.superpowers/
+docs/superpowers/
+!docs/superpowers/
+docs/superpowers/*
+!docs/superpowers/specs/
+docs/superpowers/specs/*
+!docs/superpowers/plans/
+docs/superpowers/plans/*
+plans/**
