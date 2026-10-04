@@ -44,6 +44,8 @@ ESLint 和 Prettier 不参与本仓库门禁。
 - Agent 包不执行 Session。
 - 不生成 `.js.map` 或 `.d.ts.map`。
 - `packages/cli/bin/yiku.js` 始终启动 `dist/index.js`。
+- 文档散文默认中文；包名、配置键、命令、路径、类型名和 UI 分案名等标识符保持英文原文。
+  改写文档时必须回查源码确认默认值与失败语义。详见 `AGENTS.md` 的文档语言约定。
 
 ## Package 开发
 
