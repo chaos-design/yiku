@@ -1,5 +1,5 @@
 import hljs from "highlight.js/lib/common";
-import { Marked } from "marked";
+import { Marked, marked } from "marked";
 import mermaid from "mermaid";
 
 mermaid.initialize({
@@ -43,120 +43,23 @@ function slugifyHeading(text: string): string {
     .replace(/\s+/g, "-");
 }
 
-/**
- * `marked` may pass the code block as a string (older) or a token object
- * (newer). The source text can live under `code`, `text`, or `raw`.
- */
-type CodeToken = {
-  code?: string;
-  text?: string;
-  raw?: string;
-  lang?: string;
-};
-
-function renderCodeBlock(codeOrToken: string | CodeToken, lang?: string): string {
-  const code =
-    typeof codeOrToken === "string"
-      ? codeOrToken
-      : (codeOrToken.code ?? codeOrToken.text ?? codeOrToken.raw ?? "");
-  const language = (
-    lang ?? (typeof codeOrToken === "string" ? undefined : codeOrToken.lang)
-  )?.trim();
-
-  if (language === "mermaid") {
-    return `<pre class="mermaid" data-mermaid="${escapeHtml(code)}"></pre>`;
-  }
-
-  const cls = language ? ` class="hljs language-${language}"` : ` class="hljs"`;
-  const body =
-    language && hljs.getLanguage(language)
-      ? hljs.highlight(code, { language }).value
-      : escapeHtml(code);
-  return `<pre><code${cls}>${body}</code></pre>`;
+function stripInlineMarkdown(text: string): string {
+  return text
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[*_~`]+/g, "")
+    .trim();
 }
 
-const markedInstance: Marked = new Marked({ gfm: true, breaks: false });
-markedInstance.use({
-  renderer: {
-    code(codeOrToken: string | CodeToken, lang?: string) {
-      return renderCodeBlock(codeOrToken, lang);
-    },
-  },
-});
-
-export interface TocItem {
-  id: string;
-  text: string;
-  depth: number;
-}
-
-export interface RenderResult {
-  toc: TocItem[];
-}
+// marked may pass a code block as a string (older) or a token object
+// (v15+: { type, raw, lang, text }). Normalize both shapes.
+type CoderToken = { text?: string; code?: string; lang?: string };
+type HeadingToken = { depth?: number; text?: string };
+type LinkToken = { href?: string; text?: string; title?: string | null };
 
 /**
- * Render markdown into `container`, then:
- *  - assign heading ids and build a table of contents,
- *  - rewrite relative .md links to app hash routes,
- *  - turn mermaid blocks into SVG.
- */
-export async function renderIntoDoc(
-  container: HTMLElement,
-  markdown: string,
-  fromSlug: string,
-): Promise<RenderResult> {
-  container.innerHTML = markedInstance.parse(markdown) as string;
-
-  // Assign ids + TOC.
-  const headings = Array.from(container.querySelectorAll(":scope > h1, :scope > h2, :scope > h3"));
-  const toc: TocItem[] = [];
-  for (const h of headings) {
-    const id = slugifyHeading(h.textContent ?? "");
-    if (!id) continue;
-    h.id = id;
-    const depth = Number(h.tagName.slice(1));
-    if (depth === 2 || depth === 3) {
-      toc.push({ id, text: h.textContent ?? "", depth });
-    }
-  }
-
-  // Rewrite doc links.
-  for (const a of Array.from(container.querySelectorAll("a[href]"))) {
-    const href = a.getAttribute("href") ?? "";
-    const next = resolveDocLink(href, fromSlug);
-    if (next !== href) {
-      a.setAttribute("href", next);
-      if (next.startsWith("#")) a.removeAttribute("target");
-      else a.setAttribute("target", "_blank");
-    }
-  }
-
-  // Render mermaid diagrams.
-  const blocks = Array.from(container.querySelectorAll("pre.mermaid[data-mermaid]"));
-  for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i];
-    const def = block.getAttribute("data-mermaid") ?? "";
-    const holder = document.createElement("div");
-    holder.className = "mermaid-diagram";
-    holder.innerHTML = `<div class="mermaid-fallback">图表渲染中…</div>`;
-    block.replaceWith(holder);
-    try {
-      const id = `yiku-mermaid-${Math.random().toString(36).slice(2, 10)}-${i}`;
-      const out = await mermaid.render(id, def);
-      const svg = typeof out === "string" ? out : ((out as { svg?: string }).svg ?? "");
-      holder.innerHTML = svg;
-    } catch (err) {
-      console.error("mermaid render failed", err);
-      holder.innerHTML = `<div class="mermaid-fallback">图表渲染失败</div>`;
-    }
-  }
-
-  return { toc };
-}
-
-/**
- * Given a markdown link `href` and the current document slug, rewrite relative
- * .md links to app hash routes ("#/doc/atoms/sandbox").
+ * Rewrite a relative .md link to an in-app hash route ("#/doc/atoms/sandbox")
+ * relative to the current document slug.
  */
 function resolveDocLink(href: string, fromSlug: string): string {
   if (
@@ -178,4 +81,124 @@ function resolveDocLink(href: string, fromSlug: string): string {
     else resolved.push(part);
   }
   return `#/doc/${resolved.join("/")}`;
+}
+
+export interface TocItem {
+  id: string;
+  text: string;
+  depth: number;
+}
+
+export interface RenderedDoc {
+  html: string;
+  toc: TocItem[];
+}
+
+/**
+ * Render markdown to a self-contained HTML string:
+ *  - code blocks are highlighted; mermaid blocks become placeholders that are
+ *    rendered to inline SVG afterwards,
+ *  - headings get GitHub-style ids and are collected into a TOC,
+ *  - relative .md links are rewritten to in-app hash routes.
+ *
+ * The result is fully React-safe: it is consumed through
+ * `dangerouslySetInnerHTML` instead of manual DOM writes.
+ */
+// mermaid v11's render() is not safe under concurrency: it uses the id as a
+// DOM element id for temporary render targets, and re-numbering ids across
+// calls plus overlapping invocations corrupts the produced SVGs. Serialize
+// all renders through a module-level queue with globally unique ids.
+let mermaidSeq = 0;
+let mermaidQueue: Promise<unknown> = Promise.resolve();
+
+function renderMermaid(def: string): Promise<string> {
+  const task = mermaidQueue.then(async () => {
+    const id = `yiku-mermaid-${++mermaidSeq}`;
+    const out = await mermaid.render(id, def);
+    return typeof out === "string" ? out : ((out as { svg?: string }).svg ?? "");
+  });
+  // Keep the chain alive even when one diagram fails.
+  mermaidQueue = task.then(
+    () => undefined,
+    () => undefined,
+  );
+  return task;
+}
+
+export async function renderMarkdown(markdown: string, fromSlug: string): Promise<RenderedDoc> {
+  const toc: TocItem[] = [];
+  const mermaids: Array<{ mid: string; def: string }> = [];
+  let seq = 0;
+
+  const parser = new Marked({ gfm: true, breaks: false });
+  parser.use({
+    renderer: {
+      code(tokenOrStr: string | CoderToken, lang?: string) {
+        const code =
+          typeof tokenOrStr === "string" ? tokenOrStr : (tokenOrStr.text ?? tokenOrStr.code ?? "");
+        const language = (
+          lang ?? (typeof tokenOrStr === "string" ? undefined : tokenOrStr.lang)
+        )?.trim();
+
+        if (language === "mermaid") {
+          const mid = `ym-${++seq}`;
+          mermaids.push({ mid, def: code });
+          return `<pre class="mermaid" data-mid="${mid}"></pre>`;
+        }
+
+        const cls = language ? `hljs language-${language}` : "hljs";
+        const body =
+          language && hljs.getLanguage(language)
+            ? hljs.highlight(code, { language }).value
+            : escapeHtml(code);
+        return `<pre><code class="${cls}">${body}</code></pre>`;
+      },
+      heading(tokenOrStr: string | HeadingToken, rawText?: string, rawDepth?: string) {
+        const token: HeadingToken =
+          typeof tokenOrStr === "string"
+            ? { text: rawText ?? "", depth: Number(rawDepth ?? 1) }
+            : tokenOrStr;
+        const depth = Number(token.depth ?? 1);
+        const plain = stripInlineMarkdown(token.text ?? "");
+        const id = slugifyHeading(plain);
+        if (id && depth >= 2 && depth <= 3) {
+          toc.push({ id, text: plain, depth });
+        }
+        const inner = marked.parseInline(token.text ?? "");
+        const open = id ? `<h${depth} id="${id}">` : `<h${depth}>`;
+        return `${open}${inner}</h${depth}>`;
+      },
+      link(tokenOrStr: string | LinkToken, rawHref?: string) {
+        const token: LinkToken =
+          typeof tokenOrStr === "string" ? { href: rawHref ?? "", text: tokenOrStr } : tokenOrStr;
+        const next = resolveDocLink(token.href ?? "", fromSlug);
+        const target = next.startsWith("#") ? "" : ` target="_blank" rel="noreferrer"`;
+        const inner = marked.parseInline(token.text ?? "");
+        const title = token.title ? ` title="${escapeHtml(token.title)}"` : "";
+        return `<a href="${next}"${title}${target}>${inner}</a>`;
+      },
+    },
+  });
+
+  let html = parser.parse(markdown) as string;
+
+  // Replace each mermaid placeholder with the rendered SVG (queued, so
+  // concurrent document renders cannot collide on mermaid's DOM ids).
+  for (const { mid, def } of mermaids) {
+    let replacement =
+      '<div class="mermaid-diagram"><div class="mermaid-fallback">图表渲染失败</div></div>';
+    try {
+      const svg = await renderMermaid(def);
+      if (svg) {
+        replacement = `<div class="mermaid-diagram">${svg}</div>`;
+      }
+    } catch (err) {
+      console.error("mermaid render failed", err);
+    }
+    // Function-form replacement so `$` sequences inside the SVG (e.g. `$&`)
+    // are not treated as replacement patterns.
+    html = html.replace(`<pre class="mermaid" data-mid="${mid}"></pre>`, () => replacement);
+  }
+
+  return { html, toc };
 }

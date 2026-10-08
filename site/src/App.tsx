@@ -18,7 +18,7 @@ export function App() {
       view = <DocView slug={route.slug} />;
       break;
     case "artifact":
-      view = <ArtifactView slug={route.slug} />;
+      view = <ArtifactView key={route.slug} slug={route.slug} />;
       break;
     case "gallery":
       view = <Gallery />;

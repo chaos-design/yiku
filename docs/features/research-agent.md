@@ -82,8 +82,8 @@ flowchart LR
     discovery --> runtime["SkillRuntime Catalog"]
     runtime --> runtimeSkill["createSkillRuntimeSkill(research)"]
     runtimeSkill --> scope["CapabilityScope: skills"]
-    scope --> graph["Agent Graph"]
-    graph --> factory["ResearchAgentFactory"]
+    scope --> agentGraph["Agent Graph"]
+    agentGraph --> factory["ResearchAgentFactory"]
     factory --> agent["ResearchAgent"]
 ```
 

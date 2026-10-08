@@ -1,31 +1,48 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { docCatalog, getDoc, orderedDocSlugs } from "./docs";
-import { renderIntoDoc, type TocItem } from "./markdown";
+import { type RenderedDoc, renderMarkdown } from "./markdown";
 import { ROUTES } from "./routes";
 
 export function DocView({ slug }: { slug: string }) {
   const result = getDoc(slug);
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [toc, setToc] = useState<TocItem[]>([]);
-  const [rendering, setRendering] = useState(true);
+  const [doc, setDoc] = useState<RenderedDoc | null>(null);
 
+  // Depend on `slug` only: `getDoc` returns a fresh object each render, and
+  // re-running this effect on every render is what looped the earlier version
+  // into a "stuck" state. Fetch the doc inside the effect instead.
   useEffect(() => {
     let cancelled = false;
-    setRendering(true);
-    setToc([]);
-    if (!result || !ref.current) {
-      setRendering(false);
-      return;
-    }
-    renderIntoDoc(ref.current, result.raw, slug).then((res) => {
+    setDoc(null);
+    const { raw } = getDoc(slug) ?? { raw: "" };
+    renderMarkdown(raw, slug).then((rendered) => {
       if (cancelled) return;
-      setToc(res.toc);
-      setRendering(false);
+      setDoc(rendered);
     });
     return () => {
       cancelled = true;
     };
-  }, [slug, result]);
+  }, [slug]);
+
+  // In-page anchors (#heading) must scroll, not rewrite the site hash route
+  // (#/doc/...). Clicking them as-is would replace the whole hash and send the
+  // router to a not-found page. Intercept them here.
+  useEffect(() => {
+    if (!doc) return;
+    const onAnchorClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement | null)?.closest?.("a[href^='#']");
+      if (!a) return;
+      const href = a.getAttribute("href") ?? "";
+      if (href.length <= 1 || href.startsWith("#/")) return; // site route or bare
+      e.preventDefault();
+      const id = decodeURIComponent(href.slice(1));
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+    document.addEventListener("click", onAnchorClick, true);
+    return () => document.removeEventListener("click", onAnchorClick, true);
+  }, [doc]);
 
   if (!result) {
     return (
@@ -56,9 +73,16 @@ export function DocView({ slug }: { slug: string }) {
 
       <div className="doc-layout">
         <div>
-          <div ref={ref} className="doc-body" aria-busy={rendering}>
-            {rendering ? <p style={{ color: "var(--faint)" }}>渲染中…</p> : null}
-          </div>
+          <div
+            className="doc-body"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: content is generated only by our own marked + hljs + mermaid pipeline over repository-provided docs; no external input can reach this value
+            dangerouslySetInnerHTML={doc ? { __html: doc.html } : undefined}
+          />
+          {!doc ? (
+            <p className="doc-loading" style={{ color: "var(--faint)" }}>
+              渲染中…
+            </p>
+          ) : null}
 
           <div className="pager">
             {prev ? (
@@ -86,11 +110,11 @@ export function DocView({ slug }: { slug: string }) {
           </div>
         </div>
 
-        {toc.length > 0 ? (
+        {doc && doc.toc.length > 0 ? (
           <div className="doc-toc">
             <h4>本页目录</h4>
             <ol>
-              {toc.map((t) => (
+              {doc.toc.map((t) => (
                 <li key={t.id} style={{ paddingLeft: t.depth === 3 ? 14 : 0 }}>
                   <a href={`#${t.id}`}>{t.text}</a>
                 </li>

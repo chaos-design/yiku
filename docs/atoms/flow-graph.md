@@ -74,8 +74,8 @@ Slot 范围为 `0..1`。多条边在同一节点上稳定分配不同 Slot；显
 flowchart LR
     validate["校验与规范化"] --> obstacles["外扩障碍物"]
     obstacles --> ports["分配端口"]
-    ports --> graph["构建正交可见图"]
-    graph --> search["带成本搜索"]
+    ports --> buildGraph["构建正交可见图"]
+    buildGraph --> search["带成本搜索"]
     search --> optimize["全图优化"]
     optimize --> result["Route + Metrics + Diagnostics"]
 ```

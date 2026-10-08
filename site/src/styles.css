@@ -178,7 +178,7 @@ a:hover {
   padding: 0 0 80px;
 }
 .content-inner {
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 32px 40px 0;
 }
@@ -504,8 +504,8 @@ a:hover {
 /* ===== Artifact (iframe) ===== */
 .artifact-frame {
   width: 100%;
-  height: calc(100vh - 132px);
-  min-height: 560px;
+  height: calc(100vh - 180px);
+  min-height: 620px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -515,10 +515,44 @@ a:hover {
   align-items: center;
   gap: 12px;
   margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 .artifact-bar .open-link {
   margin-left: auto;
   font-size: 13px;
+}
+
+/* ===== Immersive (fullscreen) artifact mode ===== */
+.immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.immersive-top {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.immersive-title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  flex: 1;
+}
+.immersive-frame {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: none;
+  background: var(--surface);
 }
 
 /* ===== Badges / pills ===== */
