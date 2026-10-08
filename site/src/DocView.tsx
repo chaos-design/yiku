@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { docCatalog, getDoc, orderedDocSlugs } from "./docs";
+import { Lightbox } from "./Lightbox";
 import { type RenderedDoc, renderMarkdown } from "./markdown";
 import { ROUTES } from "./routes";
 
 export function DocView({ slug }: { slug: string }) {
   const result = getDoc(slug);
   const [doc, setDoc] = useState<RenderedDoc | null>(null);
+  const [zoomSvg, setZoomSvg] = useState<string | null>(null);
+  const [zoomTitle, setZoomTitle] = useState<string>("");
+  const bodyRef = useRef<HTMLDivElement | null>(null);
 
   // Depend on `slug` only: `getDoc` returns a fresh object each render, and
   // re-running this effect on every render is what looped the earlier version
@@ -44,6 +48,33 @@ export function DocView({ slug }: { slug: string }) {
     return () => document.removeEventListener("click", onAnchorClick, true);
   }, [doc]);
 
+  // Click a mermaid diagram to open it in a zoomable lightbox.
+  useEffect(() => {
+    if (!doc) return;
+    const body = bodyRef.current;
+    if (!body) return;
+    const onDiagramClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest?.(".mermaid-diagram");
+      if (!target || !body.contains(target)) return;
+      const svg = target.querySelector("svg");
+      if (!svg) return;
+      setZoomSvg(svg.outerHTML);
+      const headings = Array.from(body.querySelectorAll("h1, h2, h3"));
+      let title = "";
+      for (const h of headings) {
+        const pos = h.compareDocumentPosition(target);
+        if (pos & Node.DOCUMENT_POSITION_FOLLOWING) {
+          title = h.textContent ?? "";
+        }
+      }
+      setZoomTitle(title || getDoc(slug)?.item.title || "图表");
+    };
+    body.addEventListener("click", onDiagramClick);
+    return () => body.removeEventListener("click", onDiagramClick);
+  }, [doc, slug]);
+
+  const closeZoom = useCallback(() => setZoomSvg(null), []);
+
   if (!result) {
     return (
       <div className="content-inner">
@@ -74,6 +105,7 @@ export function DocView({ slug }: { slug: string }) {
       <div className="doc-layout">
         <div>
           <div
+            ref={bodyRef}
             className="doc-body"
             // biome-ignore lint/security/noDangerouslySetInnerHtml: content is generated only by our own marked + hljs + mermaid pipeline over repository-provided docs; no external input can reach this value
             dangerouslySetInnerHTML={doc ? { __html: doc.html } : undefined}
@@ -123,6 +155,8 @@ export function DocView({ slug }: { slug: string }) {
           </div>
         ) : null}
       </div>
+
+      {zoomSvg ? <Lightbox svgHtml={zoomSvg} title={zoomTitle} onClose={closeZoom} /> : null}
     </div>
   );
 }
