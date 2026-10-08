@@ -170,6 +170,8 @@ corepack pnpm test
 - `packages/cli`：Ink + React 终端 UI 与 `yiku` 可执行文件。
 - `playground/agent-observatory`：Agent Observatory 页面、API、Slot 与主题扩展示例。
 - `playground/research-agent`：Research Agent、Evidence 与报告验证示例。
+- `site/`：在线文档中心与产物可视化站点（`@yiku/site`），把 `docs/` 与 `artifacts/`
+  打包成可部署到 GitHub Pages / Vercel 的静态站点。
 
 ## 文档
 
@@ -192,3 +194,24 @@ corepack pnpm test
 - [面试题库](artifacts/yiku-interview-bank.html)
 
 Package README 只提供包级快速入口。当前文档按架构层、功能层和原子层维护。
+
+## 在线站点与部署
+
+`site/` 把 `docs/` 与 `artifacts/` 打包为可在线访问的可视化站点：左侧导航联动
+右侧内容区，文档实时渲染（表格 / 代码 / Mermaid），产物以内嵌可视化页面呈现。
+
+```bash
+corepack pnpm install
+corepack pnpm site          # 本地开发（Vite dev，端口 5174）
+corepack pnpm site:build   # 生产构建到 site/dist/
+corepack pnpm site:preview  # 预览构建产物
+```
+
+两条部署路径均已内置，无需额外环境变量或密钥：
+
+- **GitHub Pages**：`.github/workflows/site.yml` 在推送到 `main` 及 PR 时构建，
+  并在 `main` 上发布。启用需把仓库 Settings → Pages → Source 设为 **GitHub Actions**。
+- **Vercel**：根目录 `vercel.json` 声明构建命令、输出目录（`site/dist`）与重写规则，
+  导入 Vercel 即可部署。
+
+详细配置、权限与验证方式见[站点部署](docs/deployment.md)。
