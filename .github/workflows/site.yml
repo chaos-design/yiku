@@ -1,0 +1,78 @@
+# Builds the online Yiku documentation + artifact site on every push to main
+# and on pull requests, and publishes the built output to GitHub Pages.
+#
+# The site is a fully static build (relative base + hash routing), so it is
+# served as-is from a GitHub Pages subpath (/yiku/) without any server-side
+# rewrite. On pull requests we build and validate the artifact but do NOT
+# publish; publishing only happens on the default (main) branch.
+#
+# Prerequisites (one-time, in the GitHub repo):
+#   1. Repository Settings -> Pages -> "Build and deployment" -> Source:
+#      "GitHub Actions" (otherwise the deploy job cannot publish).
+#   2. If you rename the default branch, update both `push.branches` and
+#      the two `refs/heads/main` guards below.
+
+name: Site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use the pnpm version pinned in package.json
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the site
+        run: pnpm --filter @yiku/site build
+
+      - name: Verify the build output
+        run: |
+          test -f site/dist/index.html
+          test -f site/dist/artifacts/yiku-architecture-share.html
+          ls -1 site/dist/artifacts
+
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    # Only publish when the main-branch build succeeds.
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

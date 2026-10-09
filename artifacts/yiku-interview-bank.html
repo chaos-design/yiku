@@ -144,6 +144,31 @@
       .q-list {
         flex: 1; margin: 0; padding: 8px; overflow-y: auto; list-style: none;
       }
+      /* 筛选面板：默认收起（一行触发条），悬停展开，移开收起；点 ⌃ 固定 */
+      .sidebar-head { padding: 14px 16px 10px; }
+      .filters-panel { position: relative; margin-top: 10px; }
+      .filters-trigger {
+        display: flex; align-items: center; gap: 8px; width: 100%;
+        padding: 7px 10px; font-family: var(--mono); font-size: 11.5px;
+        letter-spacing: .05em; color: var(--muted); text-align: left;
+        background: var(--surface-2); border: 1px solid var(--line);
+        border-radius: var(--radius); cursor: pointer;
+        transition: border-color .14s ease, color .14s ease;
+      }
+      .filters-trigger:hover { border-color: var(--line-2); color: var(--ink); }
+      .ft-ico { font-size: 10px; color: var(--faint); transition: transform .18s ease; }
+      .filters-trigger.on .ft-ico { transform: rotate(180deg); color: var(--cyan); }
+      .ft-sum { margin-left: auto; font-size: 10.5px; color: var(--faint); }
+      .ft-sum.has { color: var(--cyan); }
+      .ft-pin { font-size: 11px; color: var(--faint); opacity: 0; transition: opacity .12s ease, color .12s ease; }
+      .filters-trigger:hover .ft-pin { opacity: 1; }
+      .filters-panel.pinned .ft-pin { opacity: 1; color: var(--cyan); }
+      .filters-body {
+        overflow: hidden; max-height: 0; opacity: 0;
+        transition: max-height .22s ease, opacity .18s ease;
+      }
+      .filters-panel.open .filters-body,
+      .filters-panel.pinned .filters-body { max-height: 480px; opacity: 1; }
       .q-item {
         display: flex; gap: 10px; padding: 9px 10px; margin-bottom: 3px;
         border: 1px solid transparent; border-radius: var(--radius);
@@ -449,10 +474,20 @@
       <aside class="sidebar">
         <div class="sidebar-head">
           <input class="search-box" id="searchBox" placeholder="搜索题目 / 关键词 / 标识符…" />
-          <p class="filter-label">分类</p>
-          <div class="filter-row" id="catFilter"></div>
-          <p class="filter-label">难度</p>
-          <div class="filter-row" id="diffFilter"></div>
+          <div class="filters-panel" id="filtersPanel">
+            <button type="button" class="filters-trigger" id="filtersTrigger" aria-expanded="false">
+              <span class="ft-ico">▸</span>
+              <span class="ft-label">筛选</span>
+              <span class="ft-sum" id="ftSummary"></span>
+              <span class="ft-pin" id="ftPin" title="点击固定展开">⌃</span>
+            </button>
+            <div class="filters-body">
+              <p class="filter-label">分类</p>
+              <div class="filter-row" id="catFilter"></div>
+              <p class="filter-label">难度</p>
+              <div class="filter-row" id="diffFilter"></div>
+            </div>
+          </div>
         </div>
         <ul class="q-list scroll" id="qList"></ul>
       </aside>
@@ -4566,6 +4601,7 @@ Env :  进程环境  →  &lt;workspace&gt;/.env  →  ~/.yiku/.env  →  宿主
             })
           );
         });
+        updateFilterSummary();
       }
 
       function renderList() {
@@ -5188,6 +5224,59 @@ Env :  进程环境  →  &lt;workspace&gt;/.env  →  ~/.yiku/.env  →  宿主
         state.done = new Set();
         store.write([]);
         renderAll();
+      });
+
+      /* 筛选面板：默认收起；hover 展开，移开收起；点触发条可固定 */
+      const filtersPanel = $("#filtersPanel");
+      const filtersTrigger = $("#filtersTrigger");
+      const ftSummary = $("#ftSummary");
+      let filterHoverTimer = 0;
+
+      function updateFilterSummary() {
+        const nCats = state.cats.size;
+        const nDiffs = state.diffs.size;
+        if (!nCats && !nDiffs) {
+          ftSummary.textContent = "全部分类";
+          ftSummary.classList.remove("has");
+        } else {
+          const parts = [];
+          if (nCats) parts.push(`${nCats} 分类`);
+          if (nDiffs) parts.push(`${nDiffs} 难度`);
+          ftSummary.textContent = parts.join(" · ");
+          ftSummary.classList.add("has");
+        }
+      }
+
+      function openFilters() {
+        filtersPanel.classList.add("open");
+        filtersTrigger.setAttribute("aria-expanded", "true");
+      }
+      function closeFilters() {
+        if (filtersPanel.classList.contains("pinned")) return;
+        filtersPanel.classList.remove("open");
+        filtersTrigger.setAttribute("aria-expanded", "false");
+      }
+      filtersPanel.addEventListener("mouseenter", () => {
+        clearTimeout(filterHoverTimer);
+        openFilters();
+      });
+      filtersPanel.addEventListener("mouseleave", () => {
+        filterHoverTimer = setTimeout(closeFilters, 160);
+      });
+      filtersTrigger.addEventListener("click", () => {
+        clearTimeout(filterHoverTimer);
+        const pinned = filtersPanel.classList.toggle("pinned");
+        filtersTrigger.classList.toggle("on", pinned);
+        if (!pinned) closeFilters();
+        else openFilters();
+      });
+      $("#ftPin").addEventListener("click", (e) => {
+        e.stopPropagation();
+        clearTimeout(filterHoverTimer);
+        const pinned = filtersPanel.classList.toggle("pinned");
+        filtersTrigger.classList.toggle("on", pinned);
+        if (!pinned) closeFilters();
+        else openFilters();
       });
 
       document.addEventListener("keydown", (e) => {

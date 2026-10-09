@@ -10,13 +10,16 @@
   "scripts": {
     "build": "tsc -b && corepack pnpm --filter @yiku/agent-observatory build:web",
     "check": "corepack pnpm lint && corepack pnpm build && corepack pnpm test",
-    "clean": "tsc -b --clean && rm -rf packages/*/dist packages/*/dist-client packages/*/dist-server packages/agents/*/dist playground/*/dist playground/*/dist-server coverage",
+    "clean": "tsc -b --clean && rm -rf packages/*/dist packages/*/dist-client packages/*/dist-server packages/agents/*/dist playground/*/dist playground/*/dist-server coverage site/dist",
     "dev": "corepack pnpm --filter @yiku/cli dev --",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome check .",
     "test": "vitest run --coverage --maxWorkers=4",
-    "watch": "corepack pnpm --filter \"./packages/**\" --parallel watch"
+    "watch": "corepack pnpm --filter \"./packages/**\" --parallel watch",
+    "site": "corepack pnpm --filter @yiku/site dev",
+    "site:build": "corepack pnpm --filter @yiku/site build",
+    "site:preview": "corepack pnpm --filter @yiku/site preview"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.5",

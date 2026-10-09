@@ -76,6 +76,13 @@ flowchart TB
 - [Trajectory](atoms/trajectory.md)
 - [Flow Graph](atoms/flow-graph.md)
 
+## 站点与部署
+
+`site/` 把本目录与 `artifacts/` 打包为可在线访问的可视化站点，支持 GitHub Pages 与
+Vercel 两条部署路径。
+
+- [站点部署](deployment.md)：本地开发、构建、两种部署方式的配置步骤、所需权限与验证方式。
+
 ## 能力定位
 
 | 需求 | 文档 |
