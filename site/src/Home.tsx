@@ -1,32 +1,30 @@
 import { artifactPages } from "./artifacts";
 import { docCatalog } from "./docs";
+import { pickLocalized, useLang, useT } from "./i18n";
 import { ROUTES } from "./routes";
 
 const accents = ["blue", "cyan", "green", "purple", "yellow", "red"] as const;
 
 export function Home() {
+  const t = useT();
+  const lang = useLang();
   const sections = docCatalog.sections;
   const totalDocs = docCatalog.sections.reduce((n, s) => n + s.items.length, 0);
 
   return (
     <div className="content-inner">
-      <div className="crumb">Yiku · 在线文档中心</div>
+      <div className="crumb">{t("home.crumb")}</div>
 
       <div className="hero">
         <div className="hero-kicker">Agent Runtime · Local Platform</div>
-        <h1>Yiku 文档中心与产物可视化</h1>
-        <p>
-          这是 Yiku 仓库的在线站点：左侧导航联动右侧内容区，架构 / 功能 / 原子三层文档
-          在此渲染，仓库 <code>artifacts/</code> 下的产物以内嵌可视化页面呈现。 站点在构建时把{" "}
-          <code>docs/</code> 与 <code>artifacts/</code> 一起打包， GitHub Pages 与 Vercel
-          两种部署路径可直接运行。
-        </p>
+        <h1>{t("hero.title")}</h1>
+        <p>{t("hero.desc")}</p>
         <div className="hero-actions">
           <a href={ROUTES.doc("README")} className="btn primary">
-            阅读文档中心
+            {t("hero.primary")}
           </a>
           <a href={ROUTES.gallery} className="btn">
-            浏览全部产物
+            {t("hero.secondary")}
           </a>
         </div>
       </div>
@@ -34,37 +32,35 @@ export function Home() {
       <div className="grid" style={{ marginBottom: 8 }}>
         <a href={ROUTES.doc("README")} className="card">
           <div className="card-accent" />
-          <div className="card-kicker">文档</div>
-          <div className="card-title">文档中心</div>
-          <div className="card-body">
-            架构层、功能层、原子层的阅读路径与维护索引，共 {totalDocs} 篇文档。
-          </div>
+          <div className="card-kicker">{t("card.docs.kicker")}</div>
+          <div className="card-title">{t("card.docs.title")}</div>
+          <div className="card-body">{t("card.docs.body", { n: totalDocs })}</div>
         </a>
         <a href={ROUTES.gallery} className="card">
           <div className="card-accent cyan" />
-          <div className="card-kicker">产物</div>
-          <div className="card-title">产物画廊</div>
-          <div className="card-body">交互式架构分享页与面试题库，以同来源 iframe 内嵌呈现。</div>
+          <div className="card-kicker">{t("card.gallery.kicker")}</div>
+          <div className="card-title">{t("card.gallery.title")}</div>
+          <div className="card-body">{t("card.gallery.body")}</div>
         </a>
         <a href={ROUTES.doc("architecture/system-overview")} className="card">
           <div className="card-accent green" />
-          <div className="card-kicker">架构</div>
-          <div className="card-title">系统总览</div>
-          <div className="card-body">核心目标、宿主模型、一次任务的主链与能力地图。</div>
+          <div className="card-kicker">{t("card.overview.kicker")}</div>
+          <div className="card-title">{t("card.overview.title")}</div>
+          <div className="card-body">{t("card.overview.body")}</div>
         </a>
         <a href={ROUTES.artifact("architecture-share")} className="card">
           <div className="card-accent purple" />
-          <div className="card-kicker">可视化</div>
-          <div className="card-title">Yiku 架构分享页</div>
-          <div className="card-body">面向讲解的交互式架构简报。</div>
+          <div className="card-kicker">{t("card.share.kicker")}</div>
+          <div className="card-title">{t("card.share.title")}</div>
+          <div className="card-body">{t("card.share.body")}</div>
         </a>
       </div>
 
       {sections.map((section, i) => (
         <div key={section.id}>
           <div className="section-head">
-            <h2>{section.title}</h2>
-            <p>{section.blurb}</p>
+            <h2>{pickLocalized(section.title, lang)}</h2>
+            <p>{pickLocalized(section.blurb, lang)}</p>
           </div>
           <div className="grid">
             {section.items.map((item, j) => (
@@ -80,16 +76,18 @@ export function Home() {
       ))}
 
       <div className="section-head">
-        <h2>产物 (Artifacts)</h2>
-        <p>来自仓库 artifacts/，以内嵌可视化页面呈现</p>
+        <h2>{t("home.artifacts.title")}</h2>
+        <p>{t("home.artifacts.blurb")}</p>
       </div>
       <div className="grid">
         {artifactPages.map((a) => (
           <a key={a.slug} href={ROUTES.artifact(a.slug)} className="card">
             <div className="card-accent" />
-            <div className="card-kicker">{a.tags.join(" · ") || "artifact"}</div>
-            <div className="card-title">{a.title}</div>
-            <div className="card-body">{a.description}</div>
+            <div className="card-kicker">
+              {a.tags.map((tag) => pickLocalized(tag, lang)).join(" · ") || "artifact"}
+            </div>
+            <div className="card-title">{pickLocalized(a.title, lang)}</div>
+            <div className="card-body">{pickLocalized(a.description, lang)}</div>
           </a>
         ))}
       </div>

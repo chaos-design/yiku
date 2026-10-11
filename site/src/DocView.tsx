@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { docCatalog, getDoc, orderedDocSlugs } from "./docs";
+import { pickLocalized, useLang, useT } from "./i18n";
 import { Lightbox } from "./Lightbox";
 import { type RenderedDoc, renderMarkdown } from "./markdown";
 import { ROUTES } from "./routes";
 
 export function DocView({ slug }: { slug: string }) {
+  const t = useT();
+  const lang = useLang();
   const result = getDoc(slug);
   const [doc, setDoc] = useState<RenderedDoc | null>(null);
   const [zoomSvg, setZoomSvg] = useState<string | null>(null);
@@ -67,22 +70,21 @@ export function DocView({ slug }: { slug: string }) {
           title = h.textContent ?? "";
         }
       }
-      setZoomTitle(title || getDoc(slug)?.item.title || "图表");
+      setZoomTitle(title || getDoc(slug)?.item.title || t("doc.diagram"));
     };
     body.addEventListener("click", onDiagramClick);
     return () => body.removeEventListener("click", onDiagramClick);
-  }, [doc, slug]);
+  }, [doc, slug, t]);
 
   const closeZoom = useCallback(() => setZoomSvg(null), []);
 
   if (!result) {
     return (
       <div className="content-inner">
-        <div className="crumb">文档</div>
-        <h1 className="page-title">未找到文档</h1>
+        <div className="crumb">{t("doc.notfound.crumb")}</div>
+        <h1 className="page-title">{t("doc.notfound.title")}</h1>
         <p className="page-desc">
-          没有 slug 为 <code>{slug}</code> 的文档。
-          <a href={ROUTES.home}>返回首页</a>。
+          {t("doc.notfound.desc", { slug })} <a href={ROUTES.home}>{t("doc.notfound.link")}</a>
         </p>
       </div>
     );
@@ -98,8 +100,14 @@ export function DocView({ slug }: { slug: string }) {
     <div className="content-inner">
       <div className="crumb">
         <a href={ROUTES.home}>Yiku</a> /{" "}
-        {docCatalog.sections.find((s) => s.id === sectionId)?.title ?? sectionId} /{" "}
-        {result.item.title}
+        {pickLocalized(
+          docCatalog.sections.find((s) => s.id === sectionId)?.title ?? {
+            zh: sectionId,
+            en: sectionId,
+          },
+          lang,
+        )}{" "}
+        /{result.item.title}
       </div>
 
       <div className="doc-layout">
@@ -112,31 +120,31 @@ export function DocView({ slug }: { slug: string }) {
           />
           {!doc ? (
             <p className="doc-loading" style={{ color: "var(--faint)" }}>
-              渲染中…
+              {t("doc.loading")}
             </p>
           ) : null}
 
           <div className="pager">
             {prev ? (
               <a href={ROUTES.doc(prev)}>
-                <span className="pager-kicker">← 上一篇</span>
+                <span className="pager-kicker">{t("doc.prev")}</span>
                 <span className="pager-title">{docCatalog.index[prev]?.title ?? prev}</span>
               </a>
             ) : (
               <a className="empty" href={ROUTES.home}>
-                <span className="pager-kicker">← 上一篇</span>
-                <span className="pager-title">首页</span>
+                <span className="pager-kicker">{t("doc.prev")}</span>
+                <span className="pager-title">{t("doc.prevHome")}</span>
               </a>
             )}
             {next ? (
               <a href={ROUTES.doc(next)}>
-                <span className="pager-kicker">下一篇 →</span>
+                <span className="pager-kicker">{t("doc.next")}</span>
                 <span className="pager-title">{docCatalog.index[next]?.title ?? next}</span>
               </a>
             ) : (
               <a className="empty" href={ROUTES.gallery}>
-                <span className="pager-kicker">下一篇 →</span>
-                <span className="pager-title">产物画廊</span>
+                <span className="pager-kicker">{t("doc.next")}</span>
+                <span className="pager-title">{t("pager.gallery")}</span>
               </a>
             )}
           </div>
@@ -144,7 +152,7 @@ export function DocView({ slug }: { slug: string }) {
 
         {doc && doc.toc.length > 0 ? (
           <div className="doc-toc">
-            <h4>本页目录</h4>
+            <h4>{t("doc.toc")}</h4>
             <ol>
               {doc.toc.map((t) => (
                 <li key={t.id} style={{ paddingLeft: t.depth === 3 ? 14 : 0 }}>
