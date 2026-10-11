@@ -1,12 +1,14 @@
 // Docs are inlined at build time through the virtual module produced by
 // vite.config.ts. The key is the docs-relative path without the .md extension,
 // e.g. "architecture/system-overview".
+
 import { docs } from "virtual:yiku-docs";
+import type { LocalizedText } from "./i18n";
 
 export interface DocSection {
   id: string;
-  title: string;
-  blurb: string;
+  title: LocalizedText;
+  blurb: LocalizedText;
   items: DocItem[];
 }
 
@@ -39,20 +41,29 @@ function heading(raw: string): string {
 const sections: DocSection[] = [
   {
     id: "architecture",
-    title: "架构层",
-    blurb: "跨包组合、依赖方向、运行生命周期与工程不变量。",
+    title: { zh: "架构层", en: "Architecture" },
+    blurb: {
+      zh: "跨包组合、依赖方向、运行生命周期与工程不变量。",
+      en: "Cross-package composition, dependency direction, runtime lifecycle and engineering invariants.",
+    },
     items: [],
   },
   {
     id: "features",
-    title: "功能层",
-    blurb: "用户或宿主可直接使用的能力、配置与失败语义。",
+    title: { zh: "功能层", en: "Features" },
+    blurb: {
+      zh: "用户或宿主可直接使用的能力、配置与失败语义。",
+      en: "Capabilities, configuration and failure semantics directly usable by users or hosts.",
+    },
     items: [],
   },
   {
     id: "atoms",
-    title: "原子层",
-    blurb: "基础协议、稳定类型、存储与底层算法边界。",
+    title: { zh: "原子层", en: "Atoms" },
+    blurb: {
+      zh: "基础协议、稳定类型、存储与底层算法边界。",
+      en: "Base protocols, stable types, storage and low-level algorithm boundaries.",
+    },
     items: [],
   },
 ];
@@ -72,15 +83,23 @@ for (const key of Object.keys(docs).sort()) {
   // docs/README.md is the doc-center home; surface it under the top level.
   const section =
     top === "README"
-      ? { id: "top", title: "总览", blurb: "文档中心与维护索引。", items: [] }
+      ? {
+          id: "top",
+          title: { zh: "总览", en: "Overview" },
+          blurb: {
+            zh: "文档中心与维护索引。",
+            en: "Doc center and maintenance index.",
+          },
+          items: [],
+        }
       : sections.find((s) => s.id === top);
   if (section) {
     section.items.push(item);
   } else {
     const created: DocSection = {
       id: top,
-      title: top,
-      blurb: "",
+      title: { zh: top, en: top },
+      blurb: { zh: "", en: "" },
       items: [],
     };
     created.items.push(item);

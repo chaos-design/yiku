@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { artifactPages, getArtifact } from "./artifacts";
+import { pickLocalized, useLang, useT } from "./i18n";
 import { ROUTES } from "./routes";
 
 export function ArtifactView({ slug }: { slug: string }) {
+  const t = useT();
+  const lang = useLang();
   const artifact = getArtifact(slug);
   const [immersive, setImmersive] = useState(false);
 
@@ -19,10 +22,11 @@ export function ArtifactView({ slug }: { slug: string }) {
   if (!artifact) {
     return (
       <div className="content-inner">
-        <div className="crumb">产物</div>
-        <h1 className="page-title">未找到产物</h1>
+        <div className="crumb">{t("artifact.crumb")}</div>
+        <h1 className="page-title">{t("artifact.notfound.title")}</h1>
         <p className="page-desc">
-          没有 slug 为 <code>{slug}</code> 的产物。 <a href={ROUTES.gallery}>浏览全部产物</a>。
+          {t("artifact.notfound.desc", { slug })}{" "}
+          <a href={ROUTES.gallery}>{t("artifact.notfound.link")}</a>
         </p>
       </div>
     );
@@ -35,20 +39,23 @@ export function ArtifactView({ slug }: { slug: string }) {
   return (
     <div className="content-inner">
       <div className="crumb">
-        <a href={ROUTES.home}>Yiku</a> / 产物 / {artifact.title}
+        <a href={ROUTES.home}>Yiku</a> / {t("artifact.crumb")} /{" "}
+        {pickLocalized(artifact.title, lang)}
       </div>
 
-      <h1 className="page-title">{artifact.title}</h1>
-      <p className="page-desc">{artifact.description}</p>
+      <h1 className="page-title">{pickLocalized(artifact.title, lang)}</h1>
+      <p className="page-desc">{pickLocalized(artifact.description, lang)}</p>
 
       <div className="artifact-bar">
-        <span className="pill">{artifact.tags.join(" · ")}</span>
+        <span className="pill">
+          {artifact.tags.map((tag) => pickLocalized(tag, lang)).join(" · ")}
+        </span>
         <span className="pill">{artifact.file}</span>
         <a className="open-link" href={artifact.file} target="_blank" rel="noreferrer">
-          新窗口打开 ↗
+          {t("artifact.open")}
         </a>
         <button className="btn primary" type="button" onClick={() => setImmersive(true)}>
-          全屏沉浸 ⛶
+          {t("artifact.fullscreen")}
         </button>
       </div>
 
@@ -57,23 +64,23 @@ export function ArtifactView({ slug }: { slug: string }) {
           key={artifact.slug}
           className="artifact-frame"
           src={artifact.file}
-          title={artifact.title}
+          title={pickLocalized(artifact.title, lang)}
         />
       ) : null}
 
       {immersive ? (
         <div className="immersive">
           <div className="immersive-top">
-            <span className="immersive-title">{artifact.title}</span>
-            <span className="pill">Esc 退出</span>
+            <span className="immersive-title">{pickLocalized(artifact.title, lang)}</span>
+            <span className="pill">{t("artifact.exitEsc")}</span>
             <button className="btn" type="button" onClick={() => setImmersive(false)}>
-              退出 ⤢
+              {t("artifact.exit")}
             </button>
           </div>
           <iframe
             className="immersive-frame"
             src={artifact.file}
-            title={`${artifact.title}（沉浸模式）`}
+            title={`${pickLocalized(artifact.title, lang)}${t("artifact.immersiveSuffix")}`}
           />
         </div>
       ) : null}
@@ -82,24 +89,24 @@ export function ArtifactView({ slug }: { slug: string }) {
         <div className="pager">
           {prev ? (
             <a href={ROUTES.artifact(prev.slug)}>
-              <span className="pager-kicker">← 上一个产物</span>
-              <span className="pager-title">{prev.title}</span>
+              <span className="pager-kicker">{t("pager.prev")}</span>
+              <span className="pager-title">{pickLocalized(prev.title, lang)}</span>
             </a>
           ) : (
             <a className="empty" href={ROUTES.gallery}>
-              <span className="pager-kicker">← 返回</span>
-              <span className="pager-title">产物画廊</span>
+              <span className="pager-kicker">{t("pager.back")}</span>
+              <span className="pager-title">{t("pager.gallery")}</span>
             </a>
           )}
           {next ? (
             <a href={ROUTES.artifact(next.slug)}>
-              <span className="pager-kicker">下一个产物 →</span>
-              <span className="pager-title">{next.title}</span>
+              <span className="pager-kicker">{t("pager.next")}</span>
+              <span className="pager-title">{pickLocalized(next.title, lang)}</span>
             </a>
           ) : (
             <a className="empty" href={ROUTES.home}>
-              <span className="pager-kicker">文档中心 →</span>
-              <span className="pager-title">Yiku 文档</span>
+              <span className="pager-kicker">{t("pager.docsHome")}</span>
+              <span className="pager-title">{t("pager.docsHomeTitle")}</span>
             </a>
           )}
         </div>
