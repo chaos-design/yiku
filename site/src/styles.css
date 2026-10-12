@@ -88,34 +88,16 @@ a:hover {
   min-height: 0;
   padding: 0 16px 16px;
 }
-/* Pinned at the bottom of the sidebar; does not scroll with the menu. */
+/* Pinned at the bottom of the sidebar; does not scroll with the menu. The two
+   controls inside stretch to one shared height (see the shared rule below). */
 .sidebar-github {
   flex: 0 0 auto;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
   padding: 12px 16px;
   border-top: 1px solid var(--line);
   background: var(--surface-2);
-}
-.sidebar-github a {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-3);
-  color: var(--ink);
-  font-size: 13px;
-  text-decoration: none;
-}
-.sidebar-github a:hover {
-  border-color: var(--blue);
-  color: var(--ink);
-  text-decoration: none;
 }
 .sidebar-github svg {
   width: 16px;
@@ -167,10 +149,30 @@ a:hover {
   color: var(--ink);
   border-color: var(--blue);
 }
-/* In the pinned sidebar footer the toggle sits next to the GitHub entry; match
-   its surface so both controls read as one group. */
+/* The GitHub entry and the language toggle split the pinned footer row evenly
+   (equal width) and stretch to one shared height, so the footer reads as a
+   single matched control group. */
+.sidebar-github a,
 .sidebar-github .lang-toggle {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
   background: var(--surface-3);
+  color: var(--ink);
+  font-size: 13px;
+  text-decoration: none;
+}
+.sidebar-github a:hover,
+.sidebar-github .lang-toggle:hover {
+  border-color: var(--blue);
+  color: var(--ink);
+  text-decoration: none;
 }
 .brand-name {
   font-family: var(--display);
@@ -920,6 +922,11 @@ a:hover {
   }
   .sidebar-github a {
     display: none;
+  }
+  /* Only the toggle is left, so it keeps its natural width instead of
+     stretching across the hidden GitHub half. */
+  .sidebar-github .lang-toggle {
+    flex: 0 0 auto;
   }
   /* Full-width 吸底 content-switching bar (图1). */
   .bottombar {
