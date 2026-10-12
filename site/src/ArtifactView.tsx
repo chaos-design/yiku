@@ -7,6 +7,18 @@ export function ArtifactView({ slug }: { slug: string }) {
   const { lang, t } = useLang();
   const artifact = getArtifact(slug);
   const [immersive, setImmersive] = useState(false);
+  // Each iframe mount is a fresh load, so switching artifact or mode resets it.
+  const [frameLoading, setFrameLoading] = useState(true);
+
+  const enterImmersive = () => {
+    setImmersive(true);
+    setFrameLoading(true);
+  };
+
+  const exitImmersive = () => {
+    setImmersive(false);
+    setFrameLoading(true);
+  };
 
   // Esc exits immersive mode.
   useEffect(() => {
@@ -51,18 +63,27 @@ export function ArtifactView({ slug }: { slug: string }) {
         <a className="open-link" href={artifact.file} target="_blank" rel="noreferrer">
           {t.openNewWindow}
         </a>
-        <button className="btn primary" type="button" onClick={() => setImmersive(true)}>
+        <button className="btn primary" type="button" onClick={enterImmersive}>
           {t.fullscreen}
         </button>
       </div>
 
       {!immersive ? (
-        <iframe
-          key={artifact.slug}
-          className="artifact-frame"
-          src={artifact.file}
-          title={pickLocalized(artifact.title, lang)}
-        />
+        <div className="artifact-stage">
+          {frameLoading ? (
+            <div className="loading artifact-loading" role="status" aria-live="polite">
+              <span className="loading-spinner" />
+              <span>{t.loadingArtifact}</span>
+            </div>
+          ) : null}
+          <iframe
+            key={artifact.slug}
+            className="artifact-frame"
+            src={artifact.file}
+            title={pickLocalized(artifact.title, lang)}
+            onLoad={() => setFrameLoading(false)}
+          />
+        </div>
       ) : null}
 
       {immersive ? (
@@ -70,15 +91,24 @@ export function ArtifactView({ slug }: { slug: string }) {
           <div className="immersive-top">
             <span className="immersive-title">{pickLocalized(artifact.title, lang)}</span>
             <span className="pill">{t.escExit}</span>
-            <button className="btn" type="button" onClick={() => setImmersive(false)}>
+            <button className="btn" type="button" onClick={exitImmersive}>
               {t.exitImmersive}
             </button>
           </div>
-          <iframe
-            className="immersive-frame"
-            src={artifact.file}
-            title={`${pickLocalized(artifact.title, lang)}${t.immersiveSuffix}`}
-          />
+          <div className="immersive-stage">
+            {frameLoading ? (
+              <div className="loading artifact-loading" role="status" aria-live="polite">
+                <span className="loading-spinner" />
+                <span>{t.loadingArtifact}</span>
+              </div>
+            ) : null}
+            <iframe
+              className="immersive-frame"
+              src={artifact.file}
+              title={`${pickLocalized(artifact.title, lang)}${t.immersiveSuffix}`}
+              onLoad={() => setFrameLoading(false)}
+            />
+          </div>
         </div>
       ) : null}
 

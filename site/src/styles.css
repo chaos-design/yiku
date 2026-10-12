@@ -82,10 +82,14 @@ a:hover {
   border-right: 1px solid var(--line);
   background: var(--surface);
 }
+/* Basis 0 (not auto): the scroll area's height comes only from the leftover
+   viewport space, so a longer or shorter doc list never changes the menu
+   height — the header and footer stay pinned and only this region scrolls. */
 .sidebar-scroll {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   overflow-y: auto;
   min-height: 0;
+  overscroll-behavior: contain;
   padding: 0 16px 16px;
 }
 /* Pinned at the bottom of the sidebar; does not scroll with the menu. The two
@@ -598,6 +602,45 @@ a:hover {
   padding-bottom: 48px;
 }
 
+/* ===== Loading ===== */
+/* Shared spinner: shown while a document renders or an artifact frame loads. */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--faint);
+  font-size: 13px;
+}
+.loading-spinner {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  border: 2px solid var(--line);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: loading-spin 0.7s linear infinite;
+}
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation-duration: 2.4s;
+  }
+}
+/* Spinner sits on top of the frame until it reports load. */
+.artifact-stage {
+  position: relative;
+}
+.artifact-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  justify-content: center;
+}
+
 /* ===== Artifact (iframe) ===== */
 .artifact-frame {
   width: 100%;
@@ -643,6 +686,12 @@ a:hover {
   font-size: 15px;
   letter-spacing: 0.3px;
   flex: 1;
+}
+.immersive-stage {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
 }
 .immersive-frame {
   flex: 1;
