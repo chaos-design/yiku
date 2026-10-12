@@ -86,16 +86,21 @@ a:hover {
   flex: 1 1 auto;
   overflow-y: auto;
   min-height: 0;
-  padding: 20px 16px 16px;
+  padding: 0 16px 16px;
 }
 /* Pinned at the bottom of the sidebar; does not scroll with the menu. */
 .sidebar-github {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 12px 16px;
   border-top: 1px solid var(--line);
   background: var(--surface-2);
 }
 .sidebar-github a {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -122,11 +127,14 @@ a:hover {
   color: var(--faint);
 }
 
+/* Pinned at the top of the sidebar; does not scroll with the menu. */
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 8px 16px;
+  flex: 0 0 auto;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--line);
 }
 .brand-mark {
   width: 30px;
@@ -142,7 +150,6 @@ a:hover {
   flex: 0 0 auto;
 }
 .lang-toggle {
-  margin-left: auto;
   border: 1px solid var(--line);
   background: var(--surface-2);
   color: var(--muted);
@@ -159,6 +166,11 @@ a:hover {
 .lang-toggle:hover {
   color: var(--ink);
   border-color: var(--blue);
+}
+/* In the pinned sidebar footer the toggle sits next to the GitHub entry; match
+   its surface so both controls read as one group. */
+.sidebar-github .lang-toggle {
+  background: var(--surface-3);
 }
 .brand-name {
   font-family: var(--display);
@@ -896,10 +908,17 @@ a:hover {
   }
   .sidebar-scroll {
     overflow: visible;
-    padding: 20px 16px 12px;
+    padding: 0 16px 12px;
   }
-  /* GitHub is reachable from the mobile 吸底 bar instead, so drop the footer. */
+  /* GitHub is reachable from the mobile 吸底 bar instead, so drop the link;
+     the language toggle stays in the footer. */
   .sidebar-github {
+    justify-content: flex-end;
+    padding: 4px 16px 16px;
+    border-top: none;
+    background: transparent;
+  }
+  .sidebar-github a {
     display: none;
   }
   /* Full-width 吸底 content-switching bar (图1). */

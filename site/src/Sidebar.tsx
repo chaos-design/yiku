@@ -18,24 +18,15 @@ export function Sidebar({ route }: { route: Route }) {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-scroll">
-        <div className="brand">
-          <div className="brand-mark">Y</div>
-          <div>
-            <div className="brand-name">Yiku</div>
-            <div className="brand-sub">{t.brandSub}</div>
-          </div>
-          <button
-            type="button"
-            className="lang-toggle"
-            onClick={() => setLang(nextLang(lang))}
-            title={t.langTitle}
-            aria-label={t.langTitle}
-          >
-            {t.langLabel}
-          </button>
+      <div className="brand">
+        <div className="brand-mark">Y</div>
+        <div>
+          <div className="brand-name">Yiku</div>
+          <div className="brand-sub">{t.brandSub}</div>
         </div>
+      </div>
 
+      <div className="sidebar-scroll">
         <nav className="nav-group">
           <div className="nav-label">{t.navigate}</div>
           <a href={ROUTES.home} className={`nav-item ${activeKind === "home" ? "active" : ""}`}>
@@ -89,6 +80,15 @@ export function Sidebar({ route }: { route: Route }) {
           <span>GitHub</span>
           <span className="ext-arrow">↗</span>
         </a>
+        <button
+          type="button"
+          className="lang-toggle"
+          onClick={() => setLang(nextLang(lang))}
+          title={t.langTitle}
+          aria-label={t.langTitle}
+        >
+          {t.langLabel}
+        </button>
       </div>
     </aside>
   );
