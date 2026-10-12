@@ -111,9 +111,15 @@ export function DocView({ slug }: { slug: string }) {
             dangerouslySetInnerHTML={doc ? { __html: doc.html } : undefined}
           />
           {!doc ? (
-            <div className="loading" role="status" aria-live="polite">
-              <span className="loading-spinner" />
-              <span>{t.rendering}</span>
+            <div className="doc-skeleton" role="status" aria-busy="true">
+              <span className="sk-bar sk-h1" />
+              <span className="sk-bar sk-w96" />
+              <span className="sk-bar sk-w88" />
+              <span className="sk-bar sk-w92" />
+              <span className="sk-bar sk-h2" />
+              <span className="sk-bar sk-w76" />
+              <span className="sk-bar sk-w84" />
+              <span className="sk-bar sk-w60" />
             </div>
           ) : null}
 

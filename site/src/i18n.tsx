@@ -63,8 +63,6 @@ const STRINGS = {
       </>
     ),
     backHome: "返回文档中心",
-    rendering: "渲染中…",
-    loadingArtifact: "产物加载中…",
     tocTitle: "本页目录",
     diagram: "图表",
     pagerPrev: "← 上一篇",
@@ -144,8 +142,6 @@ const STRINGS = {
       </>
     ),
     backHome: "Back to the doc center",
-    rendering: "Rendering…",
-    loadingArtifact: "Loading artifact…",
     tocTitle: "On this page",
     diagram: "Diagram",
     pagerPrev: "← Previous",

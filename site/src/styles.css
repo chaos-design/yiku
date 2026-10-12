@@ -602,43 +602,92 @@ a:hover {
   padding-bottom: 48px;
 }
 
-/* ===== Loading ===== */
-/* Shared spinner: shown while a document renders or an artifact frame loads. */
-.loading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--faint);
-  font-size: 13px;
+/* ===== Loading skeletons ===== */
+/* Shared shimmer bar: a muted base with a highlight sweeping across it. */
+.sk-bar {
+  position: relative;
+  display: block;
+  height: 13px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--surface-2);
 }
-.loading-spinner {
-  width: 15px;
-  height: 15px;
-  flex: 0 0 auto;
-  border: 2px solid var(--line);
-  border-top-color: var(--blue);
-  border-radius: 50%;
-  animation: loading-spin 0.7s linear infinite;
+.sk-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--surface-3), transparent);
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
 }
-@keyframes loading-spin {
+@keyframes skeleton-sweep {
   to {
-    transform: rotate(360deg);
+    transform: translateX(100%);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .loading-spinner {
-    animation-duration: 2.4s;
+  .sk-bar::after {
+    animation-duration: 3s;
   }
 }
-/* Spinner sits on top of the frame until it reports load. */
+
+/* Size modifiers shared by the doc and artifact skeletons. */
+.sk-h1 {
+  height: 26px;
+  width: 42%;
+  border-radius: 8px;
+}
+.sk-h2 {
+  height: 17px;
+  width: 34%;
+  margin-top: 8px;
+}
+.sk-w96 {
+  width: 96%;
+}
+.sk-w92 {
+  width: 92%;
+}
+.sk-w88 {
+  width: 88%;
+}
+.sk-w84 {
+  width: 84%;
+}
+.sk-w76 {
+  width: 76%;
+}
+.sk-w60 {
+  width: 60%;
+}
+
+/* Document skeleton: stands in for title + prose while markdown renders. */
+.doc-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 6px 0 10px;
+}
+
+/* Artifact skeleton: covers the frame area until the iframe reports load. */
 .artifact-stage {
   position: relative;
 }
-.artifact-loading {
+.artifact-skeleton {
   position: absolute;
   inset: 0;
   z-index: 1;
-  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.immersive-stage .artifact-skeleton {
+  border: none;
+  border-radius: 0;
 }
 
 /* ===== Artifact (iframe) ===== */

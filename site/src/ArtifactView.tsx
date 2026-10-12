@@ -71,9 +71,11 @@ export function ArtifactView({ slug }: { slug: string }) {
       {!immersive ? (
         <div className="artifact-stage">
           {frameLoading ? (
-            <div className="loading artifact-loading" role="status" aria-live="polite">
-              <span className="loading-spinner" />
-              <span>{t.loadingArtifact}</span>
+            <div className="artifact-skeleton" role="status" aria-busy="true">
+              <span className="sk-bar sk-h1" />
+              <span className="sk-bar sk-w88" />
+              <span className="sk-bar sk-w92" />
+              <span className="sk-bar sk-w76" />
             </div>
           ) : null}
           <iframe
@@ -97,9 +99,11 @@ export function ArtifactView({ slug }: { slug: string }) {
           </div>
           <div className="immersive-stage">
             {frameLoading ? (
-              <div className="loading artifact-loading" role="status" aria-live="polite">
-                <span className="loading-spinner" />
-                <span>{t.loadingArtifact}</span>
+              <div className="artifact-skeleton" role="status" aria-busy="true">
+                <span className="sk-bar sk-h1" />
+                <span className="sk-bar sk-w88" />
+                <span className="sk-bar sk-w92" />
+                <span className="sk-bar sk-w76" />
               </div>
             ) : null}
             <iframe
