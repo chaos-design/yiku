@@ -27,6 +27,9 @@ export function parseHash(hash: string): Route {
   return { kind: "notfound" };
 }
 
+/** External repository link (the GitHub entry surfaced in the bottom bar). */
+export const GITHUB_REPO = "https://github.com/chaos-design/yiku";
+
 /** All hash-route URLs the site can navigate to. */
 export const ROUTES = {
   home: "#/",

@@ -1,20 +1,19 @@
 import { artifactPages } from "./artifacts";
-import { pickLocalized, useLang, useT } from "./i18n";
+import { pickLocalized, useLang } from "./i18n";
 import { ROUTES } from "./routes";
 
 const accents = ["", "cyan", "green", "purple", "yellow", ""] as const;
 
 export function Gallery() {
-  const t = useT();
-  const lang = useLang();
+  const { lang, t } = useLang();
   return (
     <div className="content-inner">
       <div className="crumb">
-        <a href={ROUTES.home}>Yiku</a> / {t("gallery.crumb")}
+        <a href={ROUTES.home}>Yiku</a> / {t.galleryCrumb}
       </div>
 
-      <h1 className="page-title">{t("gallery.title")}</h1>
-      <p className="page-desc">{t("gallery.desc")}</p>
+      <h1 className="page-title">{t.galleryTitle}</h1>
+      <p className="page-desc">{t.galleryDesc("artifacts/")}</p>
 
       <div className="grid">
         {artifactPages.map((a, i) => (
