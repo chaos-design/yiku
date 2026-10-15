@@ -190,6 +190,18 @@ a:hover {
   margin-top: 1px;
 }
 
+/* Mobile-only menu toggle (see the max-width:860px block). Hidden on desktop,
+   where the menu is always open. */
+.nav-toggle {
+  display: none;
+}
+/* `display: contents` keeps the wrapper transparent to the sidebar's flex
+   column, so the pinned header / scrolling menu / pinned footer structure is
+   untouched on desktop; the mobile block turns it into the dropdown. */
+.sidebar-menu {
+  display: contents;
+}
+
 .nav-group {
   margin-top: 14px;
 }
@@ -1005,6 +1017,70 @@ a:hover {
     display: block;
     border-right: none;
     border-bottom: 1px solid var(--line);
+  }
+  /* The brand row becomes the mobile header: it keeps the menu toggle pinned
+     to its right edge. */
+  .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .nav-toggle:hover,
+  .nav-toggle:focus-visible,
+  .nav-toggle.is-open {
+    color: var(--ink);
+    border-color: var(--blue);
+  }
+  .nav-toggle-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .nav-toggle-bars i {
+    display: block;
+    width: 16px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition:
+      transform 0.16s ease,
+      opacity 0.16s ease;
+  }
+  /* Collapsed state is an X, so the button reads as "close" while open. */
+  .nav-toggle.is-open .nav-toggle-bars i:first-child {
+    transform: translateY(6px) rotate(45deg);
+  }
+  .nav-toggle.is-open .nav-toggle-bars i:nth-child(2) {
+    opacity: 0;
+  }
+  .nav-toggle.is-open .nav-toggle-bars i:last-child {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+  /* Collapsed by default on mobile; `.is-open` is set by the toggle's state,
+     and `display: none` also keeps the links out of the tab order. */
+  .sidebar-menu {
+    display: none;
+    max-height: min(60vh, 420px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .sidebar-menu.is-open {
+    display: block;
   }
   .sidebar-scroll {
     overflow: visible;
