@@ -1,7 +1,10 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { artifactPages } from "./artifacts";
 import { catalogFor } from "./docs";
 import { nextLang, pickLocalized, useLang } from "./i18n";
 import { GITHUB_REPO, ROUTES, type Route } from "./routes";
+
+const MENU_ID = "site-nav-menu";
 
 const githubIcon = (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -15,62 +18,137 @@ export function Sidebar({ route }: { route: Route }) {
   const activeKind = route.kind;
   const activeSlug =
     activeKind === "doc" ? route.slug : activeKind === "artifact" ? route.slug : null;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Focus only returns to the toggle when it sat inside the panel, so
+  // dismissing from elsewhere on the page never steals focus.
+  const collapse = useCallback((restoreFocus: boolean) => {
+    setMenuOpen(false);
+    if (restoreFocus && menuRef.current?.contains(document.activeElement)) {
+      toggleRef.current?.focus();
+    }
+  }, []);
+
+  // Esc and tapping outside the panel close it. Both listeners are attached
+  // only while the panel is open.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") collapse(true);
+    };
+    const onPointerDown = (event: Event) => {
+      const target = event.target as Node | null;
+      if (target === null) return;
+      if (menuRef.current?.contains(target) || toggleRef.current?.contains(target)) return;
+      collapse(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [collapse, menuOpen]);
+
+  // Browser back/forward navigations collapse the panel too, so the content is
+  // never left behind an open dropdown.
+  useEffect(() => {
+    const onHashChange = () => setMenuOpen(false);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-mark">Y</div>
-        <div>
-          <div className="brand-name">Yiku</div>
-          <div className="brand-sub">{t.brandSub}</div>
-        </div>
+        <a
+          aria-label={t.brandHome}
+          className="brand-link"
+          href={ROUTES.home}
+          onClick={() => collapse(false)}
+        >
+          <div className="brand-mark">Y</div>
+          <div>
+            <div className="brand-name">Yiku</div>
+            <div className="brand-sub">{t.brandSub}</div>
+          </div>
+        </a>
+        <button
+          aria-controls={MENU_ID}
+          aria-expanded={menuOpen}
+          aria-label={menuOpen ? t.menuClose : t.menuOpen}
+          className={`nav-toggle${menuOpen ? " is-open" : ""}`}
+          onClick={() => setMenuOpen((open) => !open)}
+          ref={toggleRef}
+          type="button"
+        >
+          <span aria-hidden="true" className="nav-toggle-bars">
+            <i />
+            <i />
+            <i />
+          </span>
+        </button>
       </div>
 
-      <div className="sidebar-scroll">
-        <nav className="nav-group">
-          <div className="nav-label">{t.navigate}</div>
-          <a href={ROUTES.home} className={`nav-item ${activeKind === "home" ? "active" : ""}`}>
-            <span>{t.home}</span>
-          </a>
-          <a
-            href={ROUTES.gallery}
-            className={`nav-item ${activeKind === "gallery" ? "active" : ""}`}
-          >
-            <span>{t.gallery}</span>
-          </a>
-        </nav>
+      {/* Desktop: `display: contents`, so the sidebar keeps its pinned header /
+          scrolling menu / pinned footer structure. Mobile: the dropdown the
+          toggle above opens. */}
+      <div className={`sidebar-menu${menuOpen ? " is-open" : ""}`} id={MENU_ID} ref={menuRef}>
+        <div className="sidebar-scroll">
+          <nav className="nav-group">
+            <div className="nav-label">{t.navigate}</div>
+            <a
+              href={ROUTES.home}
+              className={`nav-item ${activeKind === "home" ? "active" : ""}`}
+              onClick={() => collapse(false)}
+            >
+              <span>{t.home}</span>
+            </a>
+            <a
+              href={ROUTES.gallery}
+              className={`nav-item ${activeKind === "gallery" ? "active" : ""}`}
+              onClick={() => collapse(false)}
+            >
+              <span>{t.gallery}</span>
+            </a>
+          </nav>
 
-        {catalog.sections.map((section) => (
-          <div className="nav-group" key={section.id}>
-            <div className="nav-label">{section.title}</div>
-            {section.items.map((item) => (
+          {catalog.sections.map((section) => (
+            <div className="nav-group" key={section.id}>
+              <div className="nav-label">{section.title}</div>
+              {section.items.map((item) => (
+                <a
+                  key={item.slug}
+                  href={ROUTES.doc(item.slug)}
+                  className={`nav-item ${
+                    activeKind === "doc" && activeSlug === item.slug ? "active" : ""
+                  }`}
+                  onClick={() => collapse(false)}
+                  title={item.title}
+                >
+                  <span>{item.title}</span>
+                </a>
+              ))}
+            </div>
+          ))}
+
+          <div className="nav-group">
+            <div className="nav-label">{t.artifacts}</div>
+            {artifactPages.map((a) => (
               <a
-                key={item.slug}
-                href={ROUTES.doc(item.slug)}
+                key={a.slug}
+                href={ROUTES.artifact(a.slug)}
                 className={`nav-item ${
-                  activeKind === "doc" && activeSlug === item.slug ? "active" : ""
+                  activeKind === "artifact" && activeSlug === a.slug ? "active" : ""
                 }`}
-                title={item.title}
+                onClick={() => collapse(false)}
               >
-                <span>{item.title}</span>
+                <span>{pickLocalized(a.title, lang)}</span>
               </a>
             ))}
           </div>
-        ))}
-
-        <div className="nav-group">
-          <div className="nav-label">{t.artifacts}</div>
-          {artifactPages.map((a) => (
-            <a
-              key={a.slug}
-              href={ROUTES.artifact(a.slug)}
-              className={`nav-item ${
-                activeKind === "artifact" && activeSlug === a.slug ? "active" : ""
-              }`}
-            >
-              <span>{pickLocalized(a.title, lang)}</span>
-            </a>
-          ))}
         </div>
       </div>
 

@@ -22,6 +22,9 @@ const STRINGS = {
     artifacts: "产物 (Artifacts)",
     langLabel: "English",
     langTitle: "切换到 English",
+    menuOpen: "打开导航菜单",
+    menuClose: "关闭导航菜单",
+    brandHome: "返回首页",
     docTitle: "Yiku 文档中心",
     // Home
     homeCrumb: "Yiku · 在线文档中心",
@@ -97,6 +100,9 @@ const STRINGS = {
     artifacts: "Artifacts",
     langLabel: "中文",
     langTitle: "切换到中文",
+    menuOpen: "Open navigation menu",
+    menuClose: "Close navigation menu",
+    brandHome: "Back to home",
     docTitle: "Yiku Docs",
     // Home
     homeCrumb: "Yiku · Online Docs",
