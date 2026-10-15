@@ -996,6 +996,14 @@ a:hover {
 .bottombar-item.external:hover {
   color: var(--cyan);
 }
+/* Language switcher in the 吸底 bar: a <button>, so reset its native box and
+   match the GitHub chip (equal half, filled chip on the bar background). */
+.bottombar-item.lang {
+  font-family: var(--body);
+  cursor: pointer;
+  background: var(--surface-2);
+  border-color: var(--line);
+}
 
 /* ===== Responsive ===== */
 @media (max-width: 1080px) {
@@ -1086,21 +1094,27 @@ a:hover {
     overflow: visible;
     padding: 0 16px 12px;
   }
-  /* GitHub is reachable from the mobile 吸底 bar instead, so drop the link;
-     the language toggle stays in the footer. */
+  /* Pinned top header: fixed to the top of the viewport, so it is never moved
+     by page scroll. The in-flow ::before spacer (same height) keeps the menu
+     from starting under the fixed bar. */
+  .brand {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .sidebar::before {
+    content: "";
+    display: block;
+    height: 64px;
+  }
+  /* GitHub + language both live in the 吸底 bar, so drop the in-flow footer. */
   .sidebar-github {
-    justify-content: flex-end;
-    padding: 4px 16px 16px;
-    border-top: none;
-    background: transparent;
-  }
-  .sidebar-github a {
     display: none;
-  }
-  /* Only the toggle is left, so it keeps its natural width instead of
-     stretching across the hidden GitHub half. */
-  .sidebar-github .lang-toggle {
-    flex: 0 0 auto;
   }
   /* Full-width 吸底 content-switching bar (图1). */
   .bottombar {
