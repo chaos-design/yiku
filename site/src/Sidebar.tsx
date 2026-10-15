@@ -63,11 +63,18 @@ export function Sidebar({ route }: { route: Route }) {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-mark">Y</div>
-        <div>
-          <div className="brand-name">Yiku</div>
-          <div className="brand-sub">{t.brandSub}</div>
-        </div>
+        <a
+          aria-label={t.brandHome}
+          className="brand-link"
+          href={ROUTES.home}
+          onClick={() => collapse(false)}
+        >
+          <div className="brand-mark">Y</div>
+          <div>
+            <div className="brand-name">Yiku</div>
+            <div className="brand-sub">{t.brandSub}</div>
+          </div>
+        </a>
         <button
           aria-controls={MENU_ID}
           aria-expanded={menuOpen}
