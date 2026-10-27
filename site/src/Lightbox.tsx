@@ -9,20 +9,22 @@ import {
 } from "react";
 import { useLang } from "./i18n";
 
-/** Zoom bounds, expressed as a multiple of the fit-to-viewport scale. */
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 8;
+/** Zoom bounds, expressed as an absolute scale (1 = one viewBox unit = 1 css px). */
+const MIN_SCALE = 0.05;
+const MAX_SCALE = 8;
+/** Breathing room (css px) kept around the diagram when fitting it to the viewport. */
+const FIT_MARGIN = 16;
+/** How far a diagram smaller than the viewport may be dragged off-centre. */
+const PAN_SLACK = 48;
 /** Zoom step for the toolbar buttons and the keyboard shortcuts. */
-const STEP = 1.25;
-const WHEEL_STEP = 1.15;
+const STEP = 1.3;
 /** Fallback intrinsic size when the SVG carries neither viewBox nor width/height. */
 const FALLBACK_SIZE = { w: 1200, h: 800 };
 
 type Size = { w: number; h: number };
 type Point = { x: number; y: number };
-type View = { zoom: number; x: number; y: number };
-
-const IDENTITY: View = { zoom: 1, x: 0, y: 0 };
+/** Diagram scale + pan offset (in screen px, applied after scaling). */
+type View = { s: number; x: number; y: number };
 
 function clampNum(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v));
@@ -74,12 +76,17 @@ function prepareDiagram(svgHtml: string): { html: string; size: Size } {
 /**
  * Click-to-zoom lightbox for document diagrams.
  *
- * The diagram is laid out at its intrinsic size and then scaled by a *fit*
- * factor computed from the live viewport, so opening it always shows the whole
- * diagram inside the available area — on a phone that is the difference between
- * "a corner of a flowchart" and "the flowchart". Zoom multiplies that fit
- * factor, pan is clamped to the diagram so it can never be dragged out of view,
- * and wheel / pinch / drag / keyboard all drive the same view state.
+ * The diagram is laid out at its intrinsic size and scaled purely by
+ * `transform: scale()`, driven by a single view state `{ s, x, y }`:
+ *   - opening fits the whole diagram inside the viewport (contain), so a wide
+ *     flowchart fills the screen instead of rendering at container width;
+ *   - wheel / pinch / button zoom is anchored at the pointer (or centre), so the
+ *     point you look at stays put;
+ *   - pan is clamped, so the diagram can never be dragged out of sight;
+ *   - "fit" is recomputed from the live viewport box on open and on resize.
+ *
+ * Every gesture funnels into `zoomAt` / `applyFit`, which share one view ref so
+ * rapid input stays smooth and consistent.
  */
 export function Lightbox({
   svgHtml,
@@ -92,210 +99,276 @@ export function Lightbox({
 }) {
   const { t } = useLang();
   const diagram = useMemo(() => prepareDiagram(svgHtml), [svgHtml]);
+  const boxRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const [viewport, setViewport] = useState<Size>({ w: 0, h: 0 });
-  const [view, setView] = useState<View>(IDENTITY);
 
-  // Pointer bookkeeping: one pointer drags, two pointers pinch-zoom.
-  const pointers = useRef(new Map<number, Point>());
-  const dragFrom = useRef<Point | null>(null);
-  const pinchFrom = useRef<{ distance: number; zoom: number } | null>(null);
+  // Latest view kept in a ref so gesture handlers always read fresh values
+  // without re-subscribing on every frame; state is mirrored for rendering.
+  const viewRef = useRef<View>({ s: 1, x: 0, y: 0 });
+  const [view, setView] = useState<View>(viewRef.current);
 
-  // Measure the viewport (and keep measuring: rotating a phone or resizing a
-  // desktop window must re-fit instead of cropping the diagram).
-  useLayoutEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    const measure = () => setViewport({ w: el.clientWidth, h: el.clientHeight });
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    window.addEventListener("orientationchange", measure);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("orientationchange", measure);
-    };
+  const commit = useCallback((next: View) => {
+    viewRef.current = next;
+    setView(next);
   }, []);
 
-  // The page behind the dialog must not scroll while the diagram is open.
+  /** Clamp pan so at least a sliver of the diagram stays on screen. */
+  const clampPan = useCallback(
+    (next: View): View => {
+      const vp = viewportRef.current;
+      if (!vp) return next;
+      const overX = Math.max(0, (next.s * diagram.size.w - vp.clientWidth) / 2);
+      const overY = Math.max(0, (next.s * diagram.size.h - vp.clientHeight) / 2);
+      return {
+        s: next.s,
+        x: clampNum(next.x, -(overX + PAN_SLACK), overX + PAN_SLACK),
+        y: clampNum(next.y, -(overY + PAN_SLACK), overY + PAN_SLACK),
+      };
+    },
+    [diagram.size.w, diagram.size.h],
+  );
+
+  /** Scale that makes the whole diagram fit inside the viewport ("contain"). */
+  const computeFit = useCallback((): number => {
+    const vp = viewportRef.current;
+    if (!vp || diagram.size.w <= 0 || diagram.size.h <= 0) return 1;
+    const availW = Math.max(1, vp.clientWidth - FIT_MARGIN * 2);
+    const availH = Math.max(1, vp.clientHeight - FIT_MARGIN * 2);
+    return clampNum(
+      Math.min(availW / diagram.size.w, availH / diagram.size.h),
+      MIN_SCALE,
+      MAX_SCALE,
+    );
+  }, [diagram.size.w, diagram.size.h]);
+
+  const applyFit = useCallback(() => {
+    commit({ s: computeFit(), x: 0, y: 0 });
+  }, [commit, computeFit]);
+
+  /** Zoom by `factor`, keeping the screen point (cx, cy) anchored. */
+  const zoomAt = useCallback(
+    (factor: number, cx: number, cy: number) => {
+      const vp = viewportRef.current;
+      if (!vp) return;
+      const rect = vp.getBoundingClientRect();
+      // Anchor position relative to the viewport centre (transform-origin).
+      const ax = cx - rect.left - rect.width / 2;
+      const ay = cy - rect.top - rect.height / 2;
+      const v = viewRef.current;
+      const s2 = clampNum(v.s * factor, MIN_SCALE, MAX_SCALE);
+      const k = s2 / v.s;
+      // Solve x' = a - k(a - x) so the anchor point stays fixed on screen.
+      commit(clampPan({ s: s2, x: ax - k * (ax - v.x), y: ay - k * (ay - v.y) }));
+    },
+    [clampPan, commit],
+  );
+
+  /** Centre of the viewport, used to anchor button/keyboard-driven zoom. */
+  const viewportCenter = useCallback((): [number, number] => {
+    const rect = viewportRef.current?.getBoundingClientRect();
+    if (!rect) return [0, 0];
+    return [rect.left + rect.width / 2, rect.top + rect.height / 2];
+  }, []);
+
+  // Fit as soon as the intrinsic size is known and the viewport is measurable.
+  useLayoutEffect(() => {
+    applyFit();
+  }, [applyFit]);
+
+  // The page behind the dialog must not scroll; hand focus to the dialog on
+  // open and restore it on close (accessibility for keyboard users).
   useEffect(() => {
     const root = document.documentElement;
     root.classList.add("lightbox-open");
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const prevFocus = document.activeElement as HTMLElement | null;
+    boxRef.current?.focus({ preventScroll: true });
     return () => {
       root.classList.remove("lightbox-open");
       document.body.style.overflow = prevOverflow;
+      prevFocus?.focus?.({ preventScroll: true });
     };
   }, []);
 
-  // Edge margin kept inside the viewport so the diagram never touches the
-  // frame; scales with the screen but stays sensible at both extremes.
-  const edge = clampNum(viewport.w * 0.03, 6, 24);
-  const fit =
-    viewport.w > 0 && viewport.h > 0
-      ? Math.min(
-          Math.max(viewport.w - edge * 2, 40) / diagram.size.w,
-          Math.max(viewport.h - edge * 2, 40) / diagram.size.h,
-        )
-      : 0;
-  const scale = (fit > 0 ? fit : 1) * view.zoom;
-
-  // Clamp panning to the diagram's own bounds: at the fit scale there is nothing
-  // to pan, so any drag snaps back instead of pushing the diagram off-screen.
-  const clampPan = useCallback(
-    (next: Point, atScale: number): Point => {
-      const maxX = Math.max(0, (diagram.size.w * atScale - viewport.w) / 2);
-      const maxY = Math.max(0, (diagram.size.h * atScale - viewport.h) / 2);
-      return { x: clampNum(next.x, -maxX, maxX), y: clampNum(next.y, -maxY, maxY) };
-    },
-    [diagram.size.w, diagram.size.h, viewport.w, viewport.h],
-  );
-
-  /**
-   * Change the zoom, keeping `anchor` (viewport-relative) fixed. Resolving the
-   * next multiplier from the *current* state keeps rapid clicks / wheel ticks
-   * additive instead of each one re-applying the same absolute value.
-   */
-  const applyZoom = useCallback(
-    (resolve: (current: number) => number, anchor?: Point) => {
-      const base = fit > 0 ? fit : 1;
-      setView((current) => {
-        const zoom = clampNum(resolve(current.zoom), MIN_ZOOM, MAX_ZOOM);
-        if (zoom === current.zoom) return current;
-        const ratio = zoom / current.zoom;
-        const a = anchor ?? { x: 0, y: 0 };
-        const panned = clampPan(
-          { x: a.x - (a.x - current.x) * ratio, y: a.y - (a.y - current.y) * ratio },
-          base * zoom,
-        );
-        return { zoom, x: panned.x, y: panned.y };
-      });
-    },
-    [fit, clampPan],
-  );
-
-  /** Relative zoom (buttons, wheel, keyboard). */
-  const zoomBy = useCallback(
-    (factor: number, anchor?: Point) => applyZoom((zoom) => zoom * factor, anchor),
-    [applyZoom],
-  );
-
-  /** Absolute zoom (pinch, where the gesture start defines the target). */
-  const zoomTo = useCallback(
-    (target: number, anchor?: Point) => applyZoom(() => target, anchor),
-    [applyZoom],
-  );
-
-  const reset = useCallback(() => setView(IDENTITY), []);
-
-  // Wheel must be a non-passive native listener: React's synthetic wheel
-  // handler is passive, so `preventDefault()` there would not stop the page
-  // from scrolling behind the dialog.
+  // Re-fit (or just re-clamp the pan) when the viewport changes size: rotating
+  // a phone or resizing a desktop window must not crop the diagram.
   useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const rect = el.getBoundingClientRect();
-      zoomBy(e.deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP, {
-        x: e.clientX - (rect.left + rect.width / 2),
-        y: e.clientY - (rect.top + rect.height / 2),
+    const vp = viewportRef.current;
+    if (!vp) return;
+    let raf = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const v = viewRef.current;
+        const fit = computeFit();
+        // Only re-fit if the user has not zoomed away from the fitted scale;
+        // otherwise just re-clamp the pan against the new box.
+        const wasFitted = Math.abs(v.s - fit) < 0.02 || v.s <= fit;
+        commit(wasFitted ? { s: fit, x: 0, y: 0 } : clampPan(v));
       });
+    });
+    ro.observe(vp);
+    window.addEventListener("orientationchange", () => applyFit());
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("orientationchange", applyFit);
     };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, [zoomBy]);
+  }, [clampPan, commit, computeFit, applyFit]);
 
+  // Keyboard: Esc closes, +/- zoom at centre, 0 fits, arrows pan.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.stopPropagation();
         onClose();
-        return;
-      }
-      if (e.key === "+" || e.key === "=") {
+      } else if (e.key === "+" || e.key === "=") {
         e.preventDefault();
-        zoomBy(STEP);
+        const [cx, cy] = viewportCenter();
+        zoomAt(STEP, cx, cy);
       } else if (e.key === "-" || e.key === "_") {
         e.preventDefault();
-        zoomBy(1 / STEP);
+        const [cx, cy] = viewportCenter();
+        zoomAt(1 / STEP, cx, cy);
       } else if (e.key === "0") {
         e.preventDefault();
-        reset();
+        applyFit();
       } else if (e.key.startsWith("Arrow")) {
         e.preventDefault();
         const step = 48;
-        const delta =
-          e.key === "ArrowLeft"
-            ? { x: step, y: 0 }
-            : e.key === "ArrowRight"
-              ? { x: -step, y: 0 }
-              : e.key === "ArrowUp"
-                ? { x: 0, y: step }
-                : { x: 0, y: -step };
-        setView((current) => {
-          const panned = clampPan({ x: current.x + delta.x, y: current.y + delta.y }, scale);
-          return { ...current, x: panned.x, y: panned.y };
-        });
+        const dx = e.key === "ArrowLeft" ? step : e.key === "ArrowRight" ? -step : 0;
+        const dy = e.key === "ArrowUp" ? step : e.key === "ArrowDown" ? -step : 0;
+        const v = viewRef.current;
+        commit(clampPan({ s: v.s, x: v.x + dx, y: v.y + dy }));
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, zoomBy, reset, clampPan, scale]);
+  }, [onClose, zoomAt, applyFit, viewportCenter, commit, clampPan]);
 
-  const onPointerDown = (e: ReactPointerEvent) => {
-    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
-    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pointers.current.size >= 2) {
-      const [a, b] = [...pointers.current.values()];
-      pinchFrom.current = { distance: distance(a, b), zoom: view.zoom };
-      dragFrom.current = null;
-    } else {
-      dragFrom.current = { x: e.clientX, y: e.clientY };
+  // Wheel must be a non-passive native listener: React's synthetic wheel
+  // handler is passive, so `preventDefault()` there would not stop the page
+  // from scrolling behind the dialog. An exponential curve keeps the feel
+  // consistent whether the input is a mouse (fine ticks) or a trackpad.
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const unit = e.deltaMode === 1 ? 0.05 : 0.0022;
+      zoomAt(Math.exp(-e.deltaY * unit), e.clientX, e.clientY);
+    };
+    vp.addEventListener("wheel", onWheel, { passive: false });
+    return () => vp.removeEventListener("wheel", onWheel);
+  }, [zoomAt]);
+
+  // Pointer bookkeeping: one pointer drags to pan, two pointers pinch-zoom.
+  const pointers = useRef(new Map<number, Point>());
+  const dragFrom = useRef<Point | null>(null);
+  const pinchFrom = useRef<{ distance: number; x: number; y: number } | null>(null);
+
+  const onPointerDown = useCallback((e: ReactPointerEvent) => {
+    try {
+      // Capture keeps the drag alive when the pointer leaves the viewport. It
+      // can throw for synthetic/fast events, which must not break bookkeeping.
+      (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    } catch {
+      /* not capturable — panning still works while inside the viewport */
     }
-  };
-
-  const onPointerMove = (e: ReactPointerEvent) => {
-    const tracked = pointers.current;
-    if (!tracked.has(e.pointerId)) return;
-    tracked.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-    if (tracked.size >= 2) {
-      const [a, b] = [...tracked.values()];
-      const start = pinchFrom.current;
-      const now = distance(a, b);
-      if (!start || start.distance <= 0 || now <= 0) return;
-      const mid = {
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 1) {
+      dragFrom.current = { x: e.clientX, y: e.clientY };
+    } else if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      pinchFrom.current = {
+        distance: distance(a, b),
         x: (a.x + b.x) / 2,
         y: (a.y + b.y) / 2,
       };
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      zoomTo(start.zoom * (now / start.distance), {
-        x: mid.x - (rect.left + rect.width / 2),
-        y: mid.y - (rect.top + rect.height / 2),
-      });
-      return;
+      dragFrom.current = null;
     }
+  }, []);
 
-    const from = dragFrom.current;
-    if (!from) return;
-    const dx = e.clientX - from.x;
-    const dy = e.clientY - from.y;
-    dragFrom.current = { x: e.clientX, y: e.clientY };
-    setView((current) => {
-      const panned = clampPan({ x: current.x + dx, y: current.y + dy }, scale);
-      return { ...current, x: panned.x, y: panned.y };
-    });
-  };
+  const onPointerMove = useCallback(
+    (e: ReactPointerEvent) => {
+      const tracked = pointers.current;
+      if (!tracked.has(e.pointerId)) return;
+      tracked.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-  const endPointer = (e: ReactPointerEvent) => {
+      if (tracked.size >= 2) {
+        const [a, b] = [...tracked.values()];
+        const dist = distance(a, b);
+        const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+        const prev = pinchFrom.current;
+        pinchFrom.current = { distance: dist, x: mid.x, y: mid.y };
+        if (!prev || prev.distance <= 0 || dist <= 0) return;
+        const vp = viewportRef.current;
+        if (!vp) return;
+        const rect = vp.getBoundingClientRect();
+        const v = viewRef.current;
+        const s2 = clampNum(v.s * (dist / prev.distance), MIN_SCALE, MAX_SCALE);
+        const k = s2 / v.s;
+        const ax = prev.x - rect.left - rect.width / 2;
+        const ay = prev.y - rect.top - rect.height / 2;
+        commit(
+          clampPan({
+            s: s2,
+            // Zoom about the previous midpoint, then follow the midpoint itself
+            // so a two-finger drag also pans.
+            x: ax - k * (ax - v.x) + (mid.x - prev.x),
+            y: ay - k * (ay - v.y) + (mid.y - prev.y),
+          }),
+        );
+        return;
+      }
+
+      const from = dragFrom.current;
+      if (!from) return;
+      const v = viewRef.current;
+      commit(clampPan({ s: v.s, x: v.x + (e.clientX - from.x), y: v.y + (e.clientY - from.y) }));
+      dragFrom.current = { x: e.clientX, y: e.clientY };
+    },
+    [clampPan, commit],
+  );
+
+  const endPointer = useCallback((e: ReactPointerEvent) => {
     pointers.current.delete(e.pointerId);
     (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
     if (pointers.current.size < 2) pinchFrom.current = null;
-    if (pointers.current.size === 0) dragFrom.current = null;
-  };
+    const rest = [...pointers.current.values()][0];
+    dragFrom.current = rest ? { x: rest.x, y: rest.y } : null;
+  }, []);
 
-  const zoomLabel = `${Math.round(scale * 100)}%`;
+  // Double click / double tap toggles between fit and 2× (at the pointer).
+  // Bound natively (not a React handler) so the gesture surface stays free of
+  // mouse-event attributes — keyboard control runs through the window-level
+  // listener instead of a control on the element.
+  const onDoubleClick = useCallback(
+    (e: MouseEvent) => {
+      const fit = computeFit();
+      if (viewRef.current.s > fit * 1.05) {
+        commit({ s: fit, x: 0, y: 0 });
+      } else {
+        zoomAt(2, e.clientX, e.clientY);
+      }
+    },
+    [commit, computeFit, zoomAt],
+  );
+
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    vp.addEventListener("dblclick", onDoubleClick);
+    return () => vp.removeEventListener("dblclick", onDoubleClick);
+  }, [onDoubleClick]);
+
+  const percent = Math.round(view.s * 100);
+  const stageStyle = {
+    width: `${diagram.size.w}px`,
+    height: `${diagram.size.h}px`,
+    transform: `translate(${view.x}px, ${view.y}px) scale(${view.s})`,
+  };
 
   return (
     <div
@@ -310,7 +383,7 @@ export function Lightbox({
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="lightbox-box">
+      <div className="lightbox-box" ref={boxRef} tabIndex={-1}>
         <div className="lightbox-head">
           <span className="lightbox-title" title={title || t.diagram}>
             {title || t.diagram}
@@ -319,20 +392,37 @@ export function Lightbox({
           <div className="lightbox-tools">
             <button
               type="button"
-              className="lightbox-tool"
-              onClick={() => zoomBy(1 / STEP)}
+              className="lightbox-tool lightbox-icon"
+              onClick={() => {
+                const [cx, cy] = viewportCenter();
+                zoomAt(1 / STEP, cx, cy);
+              }}
               aria-label={t.zoomOut}
               title={t.zoomOut}
             >
               −
             </button>
-            <span className="lightbox-zoom" aria-live="polite">
-              {zoomLabel}
-            </span>
             <button
               type="button"
-              className="lightbox-tool"
-              onClick={() => zoomBy(STEP)}
+              className="lightbox-tool lightbox-fit"
+              onClick={applyFit}
+              aria-label={t.zoomFit}
+              title={t.zoomFit}
+            >
+              <span className="lightbox-fit-icon" aria-hidden="true">
+                ⤢
+              </span>
+              <span className="lightbox-percent" aria-live="polite">
+                {percent}%
+              </span>
+            </button>
+            <button
+              type="button"
+              className="lightbox-tool lightbox-icon"
+              onClick={() => {
+                const [cx, cy] = viewportCenter();
+                zoomAt(STEP, cx, cy);
+              }}
               aria-label={t.zoomIn}
               title={t.zoomIn}
             >
@@ -340,16 +430,7 @@ export function Lightbox({
             </button>
             <button
               type="button"
-              className="lightbox-tool lightbox-fit"
-              onClick={reset}
-              aria-label={t.zoomFit}
-              title={t.zoomFit}
-            >
-              {t.zoomFit}
-            </button>
-            <button
-              type="button"
-              className="lightbox-tool lightbox-close"
+              className="lightbox-tool lightbox-icon lightbox-close"
               onClick={onClose}
               aria-label={t.zoomClose}
               title={t.zoomClose}
@@ -368,12 +449,7 @@ export function Lightbox({
         >
           <div
             className="lightbox-stage"
-            style={{
-              width: `${diagram.size.w}px`,
-              height: `${diagram.size.h}px`,
-              visibility: viewport.w > 0 ? "visible" : "hidden",
-              transform: `translate(-50%, -50%) translate(${view.x}px, ${view.y}px) scale(${scale})`,
-            }}
+            style={stageStyle}
             // biome-ignore lint/security/noDangerouslySetInnerHtml: re-hosts only the site's own mermaid SVG output
             dangerouslySetInnerHTML={{ __html: diagram.html }}
           />
