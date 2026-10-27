@@ -875,13 +875,16 @@ a:hover {
   filter: brightness(1.08);
 }
 
-/* ===== Lightbox (click-to-zoom diagram) ===== */
+/* ===== Lightbox (click-to-zoom diagram) =====
+   The dialog fills the window; the diagram is laid out at its intrinsic size
+   and scaled by a fit factor computed in JS (see Lightbox.tsx), so whatever the
+   viewport, the whole diagram lands inside the frame with a small edge margin. */
 .lightbox {
   position: fixed;
   inset: 0;
   z-index: 100;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   padding: 32px;
   background: rgba(6, 7, 8, 0.82);
@@ -890,6 +893,8 @@ a:hover {
 .lightbox-box {
   width: 100%;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--surface);
@@ -897,16 +902,21 @@ a:hover {
   border-radius: 12px;
   overflow: hidden;
 }
+/* Title shrinks and ellipsizes; the toolbar never shrinks, so the zoom / fit /
+   close controls stay visible no matter how long the heading is. */
 .lightbox-head {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
   padding: 12px 16px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
 }
 .lightbox-title {
+  flex: 0 1 auto;
+  min-width: 0;
   font-family: var(--display);
   font-weight: 700;
   font-size: 15px;
@@ -917,6 +927,7 @@ a:hover {
   max-width: 40vw;
 }
 .lightbox-hint {
+  flex: 0 0 auto;
   font-family: var(--mono);
   font-size: 11px;
   color: var(--faint);
@@ -924,8 +935,18 @@ a:hover {
 }
 .lightbox-tools {
   margin-left: auto;
+  flex: 0 0 auto;
   display: flex;
+  align-items: center;
   gap: 6px;
+}
+.lightbox-zoom {
+  min-width: 46px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 .lightbox-tool {
   min-width: 30px;
@@ -946,36 +967,51 @@ a:hover {
   border-color: var(--blue);
   color: var(--ink);
 }
+.lightbox-fit {
+  font-size: 12px;
+}
 .lightbox-close {
   color: var(--ink);
   font-size: 12px;
 }
 .lightbox-viewport {
-  flex: 1;
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   cursor: grab;
   touch-action: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overscroll-behavior: contain;
 }
 .lightbox-viewport:active {
   cursor: grabbing;
 }
+/* Positioned from the centre of the viewport, then panned and scaled from that
+   same origin — the diagram therefore grows/shrinks around the middle of the
+   frame instead of drifting to a corner. */
 .lightbox-stage {
-  width: max-content;
-  max-width: 1600px;
-  min-width: 0;
-  margin: auto;
-  padding: 40px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
   transform-origin: center center;
+  will-change: transform;
   background: var(--surface);
 }
+/* mermaid writes an inline max-width and width="100%"; the stage owns sizing
+   now, so the SVG is stretched to the stage box (the viewBox keeps the ratio).
+   The inline max-width is stripped in Lightbox.tsx, so no override is needed. */
 .lightbox-stage svg {
-  width: 100%;
-  height: auto;
   display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+}
+/* Freeze the page scroll behind the open dialog (the content column is the
+   app's scroll surface, not the window). */
+.lightbox-open .content {
+  overflow: hidden;
 }
 
 /* ===== Responsive ===== */
@@ -1214,5 +1250,43 @@ a:hover {
   }
   .content-inner:has(.pager) {
     padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+
+  /* ===== Mobile diagram lightbox =====
+     Full-bleed so the diagram gets the whole screen, with the toolbar kept on
+     one non-wrapping row: the hint is dropped and the buttons get 34px touch
+     targets, which keeps +/-/fit/close visible even at 320px. */
+  .lightbox {
+    padding: 0;
+  }
+  .lightbox-box {
+    border: none;
+    border-radius: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .lightbox-head {
+    gap: 8px;
+    padding: max(8px, env(safe-area-inset-top)) 10px 8px;
+  }
+  .lightbox-title {
+    max-width: none;
+    font-size: 13px;
+  }
+  .lightbox-hint {
+    display: none;
+  }
+  .lightbox-tool {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    font-size: 14px;
+  }
+  .lightbox-fit {
+    padding: 0 10px;
+    font-size: 12px;
+  }
+  .lightbox-zoom {
+    min-width: 40px;
+    font-size: 11px;
   }
 }
