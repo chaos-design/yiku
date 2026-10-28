@@ -1258,10 +1258,15 @@ a:hover {
     overflow-y: auto;
     padding: 12px;
   }
-  /* The brand and the footer row now live in the mobile header. */
-  .sidebar-head,
-  .sidebar-github {
+  /* The brand row now lives in the mobile header; the footer row (GitHub +
+     language toggle) stays pinned at the bottom of the panel, so the mobile
+     menu keeps the same two entries the desktop sidebar pins to its footer. */
+  .sidebar-head {
     display: none;
+  }
+  .sidebar-github {
+    display: flex;
+    flex: 0 0 auto;
   }
   /* Pager is the only 吸底 element; it sits directly above the safe area. */
   .pager {

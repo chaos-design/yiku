@@ -67,6 +67,30 @@ function Shell() {
     if (navOpen) navRef.current?.focus();
   }, [navOpen]);
 
+  // Opened panel: bring the current page's menu item into view. The panel may
+  // have been left scrolled to wherever the user last closed it (or never
+  // opened after navigating via the pager), so after the slide-in settles the
+  // active item scrolls to the centre of the visible area.
+  useEffect(() => {
+    if (!navOpen) return;
+    const timer = window.setTimeout(() => {
+      document.querySelector<HTMLElement>(".sidebar .nav-item.active")?.scrollIntoView({
+        block: "center",
+      });
+    }, 200); // let the 180ms slide-in finish first
+    return () => window.clearTimeout(timer);
+  }, [navOpen]);
+
+  // Route change: keep the highlighted menu item reachable. The desktop rail
+  // scrolls it near; with the mobile panel closed the element is hidden and
+  // the call is a harmless no-op.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: routeKey is a deliberate re-run trigger, not a value read inside the effect body.
+  useEffect(() => {
+    document
+      .querySelector<HTMLElement>(".sidebar .nav-item.active")
+      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [routeKey]);
+
   let view: ReactNode;
   switch (route.kind) {
     case "home":
