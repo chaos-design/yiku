@@ -39,6 +39,14 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+/* The mount node is the missing link in the html→body→#root→.shell height
+   chain: without a definite height it collapses to its content, so `.shell`
+   (height:100%) resolved against that — the app floated at the top of the
+   viewport instead of filling it, the sidebar rail never stretched, and its
+   pinned footer + scrollable menu list misbehaved. Pin it to the viewport. */
+#root {
+  height: 100%;
+}
 
 a {
   color: var(--blue);
