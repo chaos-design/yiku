@@ -1278,10 +1278,11 @@ a:hover {
   }
 
   /* ===== Mobile diagram lightbox =====
-     Full-bleed so the diagram gets the whole screen. The header collapses to a
-     single non-wrapping row of controls (− · fit+% · + · ✕): the title and hint
-     drop off and the buttons grow to 40px tap targets, so the whole function
-     area stays reachable even at 320px. */
+     Full-bleed so the diagram gets the whole screen. The header is a single
+     non-wrapping row: a compact, ellipsized title on the left and the controls
+     (− · fit+% · + · ✕) grouped tightly on the right (matching the PC layout),
+     with the buttons grown to 40px tap targets so the whole function area stays
+     reachable even at 320px. The gesture hint is dropped to save space. */
   .lightbox {
     padding: 0;
     background: rgba(6, 7, 8, 0.97);
@@ -1297,14 +1298,23 @@ a:hover {
     gap: 8px;
     padding: max(8px, env(safe-area-inset-top)) 12px 8px;
   }
-  .lightbox-title,
+  /* Mobile mirrors the PC header: a short, ellipsized title on the left and the
+     zoom controls grouped tightly on the right. The old mobile override spread
+     the − / fit / + / ✕ buttons edge-to-edge (justify-content: space-between),
+     leaving large gaps between them on narrow screens. */
+  .lightbox-title {
+    display: block;
+    max-width: 50%;
+    font-size: 13px;
+  }
   .lightbox-hint {
     display: none;
   }
   .lightbox-tools {
-    flex: 1 1 auto;
-    justify-content: space-between;
-    gap: 10px;
+    flex: 0 0 auto;
+    margin-left: auto;
+    justify-content: flex-end;
+    gap: 8px;
   }
   .lightbox-tool {
     min-width: 40px;
