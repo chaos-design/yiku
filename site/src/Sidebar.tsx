@@ -1,3 +1,4 @@
+import type { RefObject } from "react";
 import { artifactPages } from "./artifacts";
 import { catalogFor } from "./docs";
 import { nextLang, pickLocalized, useLang } from "./i18n";
@@ -9,32 +10,54 @@ const githubIcon = (
   </svg>
 );
 
-export function Sidebar({ route }: { route: Route }) {
+export function Sidebar({
+  ref,
+  route,
+  onNavigate,
+}: {
+  ref?: RefObject<HTMLElement | null>;
+  route: Route;
+  onNavigate?: () => void;
+}) {
   const { lang, setLang, t } = useLang();
   const catalog = catalogFor(lang);
   const activeKind = route.kind;
   const activeSlug =
     activeKind === "doc" ? route.slug : activeKind === "artifact" ? route.slug : null;
 
+  // Tapping any link closes the mobile panel. The route-change effect cannot
+  // cover this on its own: re-selecting the current page fires no `hashchange`,
+  // so the panel would otherwise stay open on top of the content.
+  const closeNav = onNavigate;
+
   return (
-    <aside className="sidebar">
-      <div className="brand">
-        <div className="brand-mark">Y</div>
-        <div>
-          <div className="brand-name">Yiku</div>
-          <div className="brand-sub">{t.brandSub}</div>
-        </div>
+    // `site-nav` is the panel the mobile header toggle expands (aria-controls).
+    // tabIndex -1 only allows programmatic focus when the panel opens.
+    <aside className="sidebar" id="site-nav" ref={ref} tabIndex={-1} aria-label={t.navigate}>
+      <div className="sidebar-head">
+        <a className="brand" href={ROUTES.home} aria-label={t.brandHome} onClick={closeNav}>
+          <div className="brand-mark">Y</div>
+          <div>
+            <div className="brand-name">Yiku</div>
+            <div className="brand-sub">{t.brandSub}</div>
+          </div>
+        </a>
       </div>
 
       <div className="sidebar-scroll">
         <nav className="nav-group">
           <div className="nav-label">{t.navigate}</div>
-          <a href={ROUTES.home} className={`nav-item ${activeKind === "home" ? "active" : ""}`}>
+          <a
+            href={ROUTES.home}
+            className={`nav-item ${activeKind === "home" ? "active" : ""}`}
+            onClick={closeNav}
+          >
             <span>{t.home}</span>
           </a>
           <a
             href={ROUTES.gallery}
             className={`nav-item ${activeKind === "gallery" ? "active" : ""}`}
+            onClick={closeNav}
           >
             <span>{t.gallery}</span>
           </a>
@@ -51,6 +74,7 @@ export function Sidebar({ route }: { route: Route }) {
                   activeKind === "doc" && activeSlug === item.slug ? "active" : ""
                 }`}
                 title={item.title}
+                onClick={closeNav}
               >
                 <span>{item.title}</span>
               </a>
@@ -67,6 +91,7 @@ export function Sidebar({ route }: { route: Route }) {
               className={`nav-item ${
                 activeKind === "artifact" && activeSlug === a.slug ? "active" : ""
               }`}
+              onClick={closeNav}
             >
               <span>{pickLocalized(a.title, lang)}</span>
             </a>
